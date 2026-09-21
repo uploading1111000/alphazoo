@@ -1,3 +1,3 @@
-from data import raw_df, tickers
+import data
 
-print(raw_df.head())
+data.test()
