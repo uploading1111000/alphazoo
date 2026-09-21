@@ -1,3 +1,3 @@
 import data
 
-data.test()
+data.get_all_histories()
