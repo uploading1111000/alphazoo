@@ -1,3 +1,3 @@
 import data
 
-data.get_all_histories()
+data.trading_days()
