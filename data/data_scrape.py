@@ -113,9 +113,7 @@ def trading_days():
     trading_days = [date.strftime('%Y-%m-%d') for date in datetimes]
     with open(RAW_DATA_PATH + 'tradeable_days.json','w') as f:
         json.dump(trading_days, f)
-    
-    
-    
 
-def get_for_quarters():
+def get_for_quarters(quarters):
+    
     pass
