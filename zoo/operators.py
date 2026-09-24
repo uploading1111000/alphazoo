@@ -155,13 +155,13 @@ class PctO(Operator):
     n_arguments = 1
     name = "Pct"
     example = "Pct(x,t)"
-    descriptor = "The relative change between x and the value t trading days prior (equiv to 1 - DivA(Delay(x,t),x))"
+    descriptor = "The relative change between x and the value t trading days prior (equiv to DivA(x,Delay(x,t)) - 1)"
         
     def _calc(self, arguments, params):
         x,t = arguments[0], self._check_lookback(params[0])
         delay = DelayO._calc(self,[x],[t])
     
-        return np.ones(len(delay),dtype=np.float32) - (x[:len(delay)]/delay)
+        return (x[:len(delay)]/delay) - np.ones(len(delay),dtype=np.float32)
 
 class MaO(Operator):
     n_arguments = 1
