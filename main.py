@@ -1,3 +1,3 @@
 import data
 
-data.trading_days()
+data.get_date_range_lookup(0,0,0,0)

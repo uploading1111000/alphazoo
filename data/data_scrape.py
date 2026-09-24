@@ -104,16 +104,67 @@ def get_all_histories():
 
 def trading_days():
     try:
+        with open(RAW_DATA_PATH + 'tradeable_days.json','r') as f:
+            trading_days_s = json.load(f)
+        return [pd.to_datetime(s) for s in trading_days_s]
+    except FileNotFoundError:
+        print("Tradeable days not found.")
+    try:
         raw_df = pd.read_csv(RAW_DATA_PATH + 'raw_data.csv', parse_dates=[0])
     except FileNotFoundError:
         print("Data not found, downloading...")
         raw_df = download()
     raw_df.sort_values('Date',inplace=True)
     datetimes = raw_df['Date'].unique().tolist()
-    trading_days = [date.strftime('%Y-%m-%d') for date in datetimes]
+    trading_days_s = [date.strftime('%Y-%m-%d') for date in datetimes]
     with open(RAW_DATA_PATH + 'tradeable_days.json','w') as f:
-        json.dump(trading_days, f)
+        json.dump(trading_days_s, f)
+    return datetimes
 
-def get_for_quarters(quarters):
+def get_date_range_lookback(begin, end, lookback=90, forward=20):
+    try:
+        with open(TICKER_PATH + "meta.json",'r') as f:
+            ticker_meta = json.load(f)
+    except FileNotFoundError:
+        print("Ticker metadata not found, splitting...")
+        split_tickers()
+        with open(TICKER_PATH + "meta.json",'r') as f:
+            ticker_meta = json.load(f)
+    period_data_list = []
+    for meta in ticker_meta:
+        min_date = pd.to_datetime(meta["min_date"])
+        max_date = pd.to_datetime(meta["max_date"])
+        if min_date > begin or max_date <= end:
+            continue
+        ticker_df = pd.read_csv(meta['file'],parse_dates=[0])
+        ticker_df.sort_values('Date',ascending=False,inplace=True)
+
+        for i,date in enumerate(ticker_df['Date']):
+            if date < end:
+                first_index = i
+                break
+        else:
+            continue
+        for i,date in enumerate(ticker_df['Date']):
+            if date < begin:
+                second_index = i-1
+                break
+        else:
+            continue
+        third_index = second_index + lookback + forward
+        if third_index > ticker_df.shape[0]:
+            continue
+        ticker_period_df = ticker_df.iloc[first_index:third_index]
+        ticker_data = {
+            "CLOSE": ticker_period_df['Close'].to_numpy(dtype=np.float32),
+            "OPEN": ticker_period_df['Open'].to_numpy(dtype=np.float32),
+            "HIGH": ticker_period_df['High'].to_numpy(dtype=np.float32),
+            "LOW": ticker_period_df['Low'].to_numpy(dtype=np.float32),
+            "VOLUME": ticker_period_df['Volume'].to_numpy(dtype=np.float32)
+        }
+        period_data_list.append(ticker_data)
+    return period_data_list
+
+
+
     
-    pass

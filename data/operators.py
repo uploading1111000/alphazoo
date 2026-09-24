@@ -24,7 +24,17 @@ class Operator():
         params = args[self.n_arguments:]
         if np.any([len(arg) == 1 for arg in arguments]):
             warnings.warn(f"Series of length 1 detected in execution of {self.name}. Are you sure this isnt meant to be a parameter?")
+        if len(arguments) > 1:
+            window = min(len(argument) for argument in arguments)
+            arguments = [argument[:window] for argument in arguments]
         return arguments,params
+
+    def _check_lookback(self, lookback):
+        if isinstance(lookback, (bool, np.bool_)) or not isinstance(lookback, (int, np.integer)):
+            raise TypeError(f"{self.name} lookback must be a positive integer")
+        if lookback <= 0:
+            raise ValueError(f"{self.name} lookback must be a positive integer")
+        return lookback
     
     def _calc(self, arguments, params):
         warnings.warn("Passthrough operator (noop) ran")
@@ -108,7 +118,7 @@ class LogO(Operator):
     descriptor = "The natural logarithm of x"
 
     def _calc(self, arguments, params):
-        return np.log(arguments[0])#
+        return np.log(arguments[0])
 
 class DelayO(Operator):
     n_arguments = 1
@@ -118,7 +128,7 @@ class DelayO(Operator):
     descriptor = "The value of x at t trading days prior"
 
     def _calc(self, arguments, params):
-        x,t = arguments[0], params[0]
+        x,t = arguments[0], self._check_lookback(params[0])
         if len(x) < t+1:
             raise ValueError(
                 f"{self.name} Lookback time greater than number of days in window"
@@ -134,8 +144,8 @@ class DiffO(Operator):
     descriptor = "The difference between x and the value t trading days prior (equiv to SubA(x,Delay(x,t)))"
     
     def _calc(self, arguments, params):
-        x,t = arguments[0], params[0]
-        delay = DelayO._calc(self,x,t)
+        x,t = arguments[0], self._check_lookback(params[0])
+        delay = DelayO._calc(self,[x],[t])
 
         return x[:len(delay)] - delay
 
@@ -148,8 +158,8 @@ class PctO(Operator):
     descriptor = "The relative change between x and the value t trading days prior (equiv to 1 - DivA(Delay(x,t),x))"
         
     def _calc(self, arguments, params):
-        x,t = arguments[0], params[0]
-        delay = DelayO._calc(self,x,t)
+        x,t = arguments[0], self._check_lookback(params[0])
+        delay = DelayO._calc(self,[x],[t])
     
         return np.ones(len(delay),dtype=np.float32) - (x[:len(delay)]/delay)
 
@@ -161,7 +171,7 @@ class MaO(Operator):
     descriptor = "The mean of x over the last t trading days"
             
     def _calc(self, arguments, params):
-        x,t = arguments[0], params[0]
+        x,t = arguments[0], self._check_lookback(params[0])
         means = []
         for i in range(len(x)-t+1):
             means.append(np.mean(x[i,i+t]))
@@ -175,7 +185,7 @@ class MedO(Operator):
     descriptor = "The median of x over the last t trading days"
                 
     def _calc(self, arguments, params):
-        x,t = arguments[0], params[0]
+        x,t = arguments[0], self._check_lookback(params[0])
         medians = []
         for i in range(len(x)-t+1):
             medians.append(np.median(x[i,i+t]))
@@ -189,7 +199,7 @@ class SumO(Operator):
     descriptor = "The sum of x over the last t trading days"
                     
     def _calc(self, arguments, params):
-        x,t = arguments[0], params[0]
+        x,t = arguments[0], self._check_lookback(params[0])
         sums = []
         for i in range(len(x)-t+1):
             sums.append(np.sum(x[i,i+t]))
@@ -203,7 +213,7 @@ class StdO(Operator):
     descriptor = "The standard deviation of x over the last t trading days"
                     
     def _calc(self, arguments, params):
-        x,t = arguments[0], params[0]
+        x,t = arguments[0], self._check_lookback(params[0])
         stds = []
         for i in range(len(x)-t+1):
             stds.append(np.std(x[i,i+t]))
@@ -217,7 +227,7 @@ class MaxO(Operator):
     descriptor = "The maximum value of x over the last t trading days"
                     
     def _calc(self, arguments, params):
-        x,t = arguments[0], params[0]
+        x,t = arguments[0], self._check_lookback(params[0])
         maxs = []
         for i in range(len(x)-t+1):
             maxs.append(np.max(x[i,i+t]))
@@ -231,7 +241,7 @@ class MinO(Operator):
     descriptor = "The minimum value of x over the last t trading days"
                     
     def _calc(self, arguments, params):
-        x,t = arguments[0], params[0]
+        x,t = arguments[0], self._check_lookback(params[0])
         mins = []
         for i in range(len(x)-t+1):
             mins.append(np.max(x[i,i+t]))
@@ -245,7 +255,7 @@ class RankO(Operator):
     descriptor = "The ranking of x relative to its values over the last t trading days"
                     
     def _calc(self, arguments, params):
-        x,t = arguments[0], params[0]
+        x,t = arguments[0], self._check_lookback(params[0])
         ranks = []
         for i in range(len(x)-t+1):
             rank = 1
@@ -264,7 +274,7 @@ class SkewO(Operator):
     descriptor = "The skewness value of x over the last t trading days"
                     
     def _calc(self, arguments, params):
-        x,t = arguments[0], params[0]
+        x,t = arguments[0], self._check_lookback(params[0])
         skews = []
         for i in range(len(x)-t+1):
             skews.append(skew(x[i,i+t]))
@@ -278,7 +288,7 @@ class KurtO(Operator):
     descriptor = "The kurtosis value of x over the last t trading days (Fisher)"
                     
     def _calc(self, arguments, params):
-        x,t = arguments[0], params[0]
+        x,t = arguments[0], self._check_lookback(params[0])
         kurts = []
         for i in range(len(x)-t+1):
             kurts.append(kurtosis(x[i,i+t]))
@@ -304,8 +314,8 @@ class AutocorrO(Operator):
     descriptor = "The autocorrelation coefficient of x with a lag of n over the past t trading days. Equiv to Corr(x,Delay(x,n),t)"
 
     def _calc(self, arguments, params):
-        delay = DelayO._calc(self,[arguments[0]],params[1])
-        return CorrO._calc(self,[arguments[0],delay],params[0])
+        delay = DelayO._calc(self,[arguments[0]],[params[1]])
+        return CorrO._calc(self,[arguments[0],delay],[params[0]])
 
 class ZscoreO(Operator):
     n_arguments = 1
@@ -453,9 +463,7 @@ class CovO(Operator):
     descriptor = "Covariance of x and y over the last t trading days"
 
     def _calc(self, arguments, params):
-        x,y,t = arguments[0], arguments[1], params[0]
-        if not isinstance(t, (int, np.integer)):
-            raise TypeError("Cov lookback must be an integer")
+        x,y,t = arguments[0], arguments[1], self._check_lookback(params[0])
         window = min(len(x),len(y))
         if t > window:
             raise ValueError(
@@ -476,9 +484,11 @@ class CorrO(Operator):
     descriptor = "Correlation of x and y over the last t trading days. Equivalent to DivA(Cov(x,y,t),MulA(Std(x,t),Std(y,t)))"
 
     def _calc(self, arguments, params):
+        window = min(len(arguments[0]), len(arguments[1]))
+        arguments = [argument[:window] for argument in arguments]
         cov = CovO._calc(self,arguments, params)
-        stdx = StdO._calc(self,[arguments[0]],params[0])
-        stdy = StdO._calc(self,[arguments[1]],params[0])
+        stdx = StdO._calc(self,[arguments[0]],[params[0]])
+        stdy = StdO._calc(self,[arguments[1]],[params[0]])
         return cov / (stdx * stdy)
 
 _OPERATORS = [NegO(),AbsO(),PowerO(),SignO(),SinO(),CosO(),TanhO(),LogO(),DelayO(),DiffO(),PctO(),
