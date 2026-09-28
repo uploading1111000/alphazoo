@@ -473,7 +473,7 @@ class CovO(Operator):
         covariance = []
         for i in range(window - t + 1):
             m = np.vstack([x[i:i+t],y[i:i+t]])
-            covariance.append(np.cov(m))
+            covariance.append(np.cov(m[0,1]))
         return np.array(covariance,dtype=np.float32)
 
 class CorrO(Operator):
