@@ -1,2 +1,5 @@
-import data
-import pandas as pd
+import llm
+
+with llm.model() as model:
+    pass
+

@@ -3,7 +3,8 @@ import scipy.stats as ss
 import numpy as np
 
 class train_backtester():
-    def __init__(self, zoo, forward, lookback,begin,end,turnover_skip=5,turnover_top_p=0.1):
+    def __init__(self, model, zoo, forward, lookback,begin,end,turnover_skip=5,turnover_top_p=0.1):
+        self.model = model
         self.forward = forward
         self.lookback = lookback
         self.zoo = zoo
@@ -13,14 +14,14 @@ class train_backtester():
         self.turnover_top_p = turnover_top_p
 
         #targets
-        self.day_length = len(self.universe[0]["CLOSE"])
+        self.day_length = len(self.universe[0]["close"])
         self.targets_n = self.day_length - forward - lookback
         self.lookback_n = self.day_length - forward
         self.targets = np.zeros((self.universe_n,self.targets_n))
-        self.targets[0] = self.universe[0]["CLOSE"][:self.targets_n]
+        self.targets[0] = self.universe[0]["close"][:self.targets_n]
         for i, history in enumerate(self.universe[1:]):
-            assert len(history["CLOSE"]) == self.day_length
-            self.targets[i+1] = history["CLOSE"][:self.targets_n]
+            assert len(history["close"]) == self.day_length
+            self.targets[i+1] = history["close"][:self.targets_n]
 
         #universe_histories
         self.histories = []
@@ -84,7 +85,7 @@ class train_backtester():
         m_correlations = np.abs(np.dot(centered_predictions,centered_zoo)) / (std_predictions * std_zoo)
         self._most_recent_diversity = -np.max(m_correlations)
 
-#TODO: Overfitting Risk (requires thinking through formula class)
+#TODO: Overfitting Risk (requires thinking through formula class, and working with LLMS)
 
 
 #effectiveness - rankIC. Uses target/predictions

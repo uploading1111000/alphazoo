@@ -156,11 +156,11 @@ def get_date_range_lookback(begin, end, lookback=90, forward=20):
             continue
         ticker_period_df = ticker_df.iloc[first_index:third_index]
         ticker_data = {
-            "CLOSE": ticker_period_df['Close'].to_numpy(dtype=np.float32),
-            "OPEN": ticker_period_df['Open'].to_numpy(dtype=np.float32),
-            "HIGH": ticker_period_df['High'].to_numpy(dtype=np.float32),
-            "LOW": ticker_period_df['Low'].to_numpy(dtype=np.float32),
-            "VOLUME": ticker_period_df['Volume'].to_numpy(dtype=np.float32)
+            "close": ticker_period_df['Close'].to_numpy(dtype=np.float32),
+            "open": ticker_period_df['Open'].to_numpy(dtype=np.float32),
+            "high": ticker_period_df['High'].to_numpy(dtype=np.float32),
+            "low": ticker_period_df['Low'].to_numpy(dtype=np.float32),
+            "volume": ticker_period_df['Volume'].to_numpy(dtype=np.float32)
         }
         period_data_list.append(ticker_data)
     return period_data_list
