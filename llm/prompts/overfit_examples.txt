@@ -1,0 +1,12 @@
+{
+"reason": "Complexity is justified by a strong rationale; principled refinement history suggests low risk.",
+"score": 9
+}
+{
+"reason": "Plausible rationale, but some expression opacity and parameter tuning in history indicate moderate risk.",
+"score": 5
+}
+{
+"reason": "High risk inferred from opaque expression lacking clear rationale, supported by history showing excessive tuning.",
+"score": 1
+}

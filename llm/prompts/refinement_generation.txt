@@ -33,15 +33,3 @@ param=[param1, param2, ...]), where:
 numeric type).
 • param1, param2, ... are parameter names defined in the alpha requirements.
 The format example is as follows:
-{
-    "name": "volatility_adjusted_momentum",
-    "description": "Momentum scaled by volatility",
-    "pseudo_code": [
-        "past_history = Delay(input=[close],param=[momentum_lookback])",
-        "past_ma = Ma(input=[past_history],param=[momentum_window])",
-        "current_ma = Ma(input=[close],param=[momentum_window])",
-        "momentum = SubA(input=[past_ma,current_ma])",
-        "volatility = Std(input=[momentum],param=[volaility_window])",
-        "volatility_adjusted_momentum = DivA(input=[momentum,volatility])"
-    ]
-}

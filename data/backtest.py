@@ -1,4 +1,4 @@
-from .data_scrape import get_date_range_lookback
+from .data_scrape import get_date_range_lookback, AVAILABLE_FIELDS_STRING
 import scipy.stats as ss
 import numpy as np
 

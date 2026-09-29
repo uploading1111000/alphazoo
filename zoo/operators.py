@@ -497,8 +497,8 @@ _OPERATORS = [NegO(),AbsO(),PowerO(),SignO(),SinO(),CosO(),TanhO(),LogO(),DelayO
               CovO(), CorrO()]       
 
 OPERATORS = {} 
-AVAILABLE_STRING = ""
+AVAILABLE_OPERATORS_STRING = ""
 for Op in _OPERATORS:
     OPERATORS[Op.name] = Op
-    AVAILABLE_STRING = AVAILABLE_STRING + "\n" + Op.example + " - " + Op.descriptor
+    AVAILABLE_OPERATORS_STRING = AVAILABLE_OPERATORS_STRING + "\n" + Op.example + " - " + Op.descriptor
 

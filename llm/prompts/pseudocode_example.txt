@@ -1,0 +1,12 @@
+{
+    "name": "volatility_adjusted_momentum",
+    "description": "Momentum scaled by volatility",
+    "pseudo_code": [
+        "past_history = Delay(input=[close],param=[momentum_lookback])",
+        "past_ma = Ma(input=[past_history],param=[momentum_window])",
+        "current_ma = Ma(input=[close],param=[momentum_window])",
+        "momentum = SubA(input=[current_ma,past_ma])",
+        "volatility = Std(input=[close],param=[volaility_window])",
+        "volatility_adjusted_momentum = DivA(input=[momentum,volatility])"
+    ]
+}

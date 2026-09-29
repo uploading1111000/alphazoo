@@ -11,13 +11,12 @@ Below are example alpha formulas that perform exceptionally well on or address t
 {few_shot_examples}
 Instructions
 1. Analyze the Candidate Formula:
-Examine the alpha formula through the lens of quantitative finance (e.g., momentum, mean reversion, market microstructure, volatility, or price-volume interaction). Identify structural or logical limitations regarding the dimension of interest.  
+Examine the alpha formula through the lens of quantitative finance. Identify structural or logical limitations regarding the dimension of interest.  
 2. Learn from Few-Shot Exemplars:
-Use the provided examples to inspire structural, mathematical, or conceptual improvements (e.g., incorporating non-linear transformations like Tanh/Sign, price-dislocation measures like close - vwap, volatility scaling, or moving-average smoothing).   
+Use the provided examples to inspire structural, mathematical, or conceptual improvements.
 3. Formulate a Refinement Suggestion:
 Write a concise, concrete hypothesis/suggestion explaining how to modify the candidate formula to specifically improve performance on the dimension of note.
-    Focus on economic rationale, signal stability, noise reduction, or structural innovation.
-    Do NOT output code or mathematical syntax in this step—provide only the conceptual suggestion.  
+Focus on economic rationale, signal stability, noise reduction, or structural innovation.
 Output Format
-Provide your response in the following format:
-[Insert a clear, 1–2 sentence conceptual suggestion explaining the proposed improvement, such as incorporating a direct measure of momentum, applying non-linear filtering, or adjusting lookback windows to smooth noise.]
+Do NOT output code or mathematical syntax in this step—provide only the conceptual suggestion.  
+Provide your response as a clear, 1–2 sentence conceptual suggestion explaining the proposed improvement.
