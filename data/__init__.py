@@ -1,1 +1,1 @@
-from .backtest import train_backtester
+from .backtest import alpha_backtester
