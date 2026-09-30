@@ -6,10 +6,12 @@ import numpy as np
 
 def validate_code(code,arguments,window=90): #not sure how to handle the window so far, seems silly to keep window around as a member of every class
     #this will probably have to update as we see whatever nonsensical things the LLM comes up with
+    if len(parameters) == 0:
+        return f"Invalid arguments. No arguments supplied"
     parameters = arguments[0].keys()
     for i, params in enumerate(arguments):
         if params.keys() != parameters:
-            return f"Invalid Arguments. Argument {i} doesnt have the same parameters as argument {0}"
+            return f"Invalid arguments. Argument {i} doesnt have the same parameters as argument {0}"
 
     available_variables = set(AVAILABLE_FIELDS)
     for i,line in enumerate(code):
@@ -26,7 +28,7 @@ def validate_code(code,arguments,window=90): #not sure how to handle the window 
         if len(variables) != operator.n_variables:
             return f"Invalid code. Line {i} has invalid number of inputs (expected {operator.n_variables}, received {len(variables)})"
         if len(params) != operator.n_parameters:
-            return f"Invalid code. Line {i} has invalid number of parameters (expected {operator.n_parameters}, received {len(param)})"
+            return f"Invalid code. Line {i} has invalid number of parameters (expected {operator.n_parameters}, received {len(params)})"
         for variable in variables:
             if not variable in available_variables:
                 return f"Invalid code. Line {i} expects variable {variable} but does not yet exist."
@@ -55,7 +57,7 @@ def validate_lookback(code,arguments,window):
             param_values = [parameters[param_name] for param_name in params]
             lookback_window = operator.lookback_window(variable_lookbacks,param_values)
             available_variables[output] = lookback_window
-        lookback = np.max(available_variables.values())
+        lookback = max(available_variables.values())
         if lookback > window:
             return f"Argument {j} produces lookback window larger than allowed (Argument: {lookback}, permitted window: {window})"
     return "valid"
@@ -70,6 +72,7 @@ class Formula():
 
     def add_code(self,formula):
         self.arg_list = formula["arguments"]
+        self.ofr_reviews = [None] * len(formula["arguments"])
         self.code = formula["formula"]
         self.formula_string = json.dumps(formula,indent=5)
         return validate_code(self.code,self.arg_list)
@@ -86,27 +89,35 @@ class Formula():
         z_member.children = None
         return z_member
 
-    def apply(self, histories): #this is going to be a big function!!!!
+    def apply(self, histories):
         #apply to each history in histories
         #return np array of shape (universe_n,>targets_n)
         parameters = self.arg_list[self.arg_i]
+        predictions = []
         for history in histories:
             variables = copy.copy(history)
             for line in self.code:
                 name = line["name"]
-                params = line["param"]
-                variables = line["input"]
+                param_names = line["param"]
+                var_names = line["input"]
                 output = line["output"]
                 operator = OPERATORS[name]
-                
-
+                v_values = [variables[v_name] for v_name in var_names]
+                p_values = [parameters[p_name] for p_name in param_names]
+                variables[output] = operator(v_values,p_values)
+            predictions.append(variables["alpha"])
+        return np.array(predictions)
 
     def apply_args(self,i):
         self.arg_i = i
 
     def best_args(self,i):
         self.arg_list = [self.arg_list[i]]
+        self.ofr_reviews = [self.ofr_reviews[i]]
         self.arg_i = 0
+
+    def add_ofr_review(self,review):
+        self.ofr_reviews[self.arg_i] = review
 
     def alpha(self):
         #return pseudocode or formula or whatever with best params

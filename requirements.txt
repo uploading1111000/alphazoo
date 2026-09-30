@@ -4,3 +4,4 @@ requests
 numpy<2.0
 openrouter
 python-dotenv
+scipy

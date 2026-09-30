@@ -111,7 +111,7 @@ class model():
                 if "reason" in returnable and "score" in returnable:
                     score = returnable["score"]
                     if type(score) is int:
-                        if score <= 10 and score >= 10:
+                        if score <= 10 and score >= 0:
                             return returnable
         else:
             raise RuntimeError("Failed to generate valid overfitting score after 10 tries")

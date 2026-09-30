@@ -17,7 +17,7 @@ Formatting Requirements:
 The output must be in JSON format with three key-value pairs:
 1. ”name”: A short, descriptive name for the alpha (following Python variable naming style, e.g., price_volatility_ratio).
 2. ”description”: A concise explanation of the alpha’s purpose or what it measures. Avoid overly technical language. Focus on the intuition behind the alpha.
-3. ”pseudo code”: A list of strings, where each string is a line of simplified pseudo-code representing a single operation in the alpha calculation. Each line should follow the format: variable name = op_name(input=[input1, input2, ...], param=[param1, param2, ...]), where:
+3. ”pseudo_code”: A list of strings, where each string is a line of simplified pseudo-code representing a single operation in the alpha calculation. Each line should follow the format: variable name = op_name(input=[input1, input2, ...], param=[param1, param2, ...]), where:
 variable name is the output variable of the operation.
 op name is the name of one of the ”Available Operators”.
 input1, input2, . . . are input variables (either from ”Available Data Fields” or previously calculated variables, cannot be of a numeric type).

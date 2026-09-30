@@ -8,6 +8,6 @@
     {"name": "DivA", "param": [], "input": ["momentum", "volatility"], "output": "alpha"}
 ],
 "arguments": [
-    {"momentum_lookback": 20, "momentum_window": 5, "volaility_window": 20}
+    {"momentum_lookback": 20, "momentum_window": 5, "volatility_window": 20}
 ]
 }

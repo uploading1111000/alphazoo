@@ -191,7 +191,7 @@ class MaO(Operator):
         x,t = variables[0], self._check_lookback(params[0])
         means = []
         for i in range(len(x)-t+1):
-            means.append(np.mean(x[i,i+t]))
+            means.append(np.mean(x[i:i+t]))
         return np.array(means)
 
     def lookback_window(self, variable_lookbacks, params):
@@ -208,7 +208,7 @@ class MedO(Operator):
         x,t = variables[0], self._check_lookback(params[0])
         medians = []
         for i in range(len(x)-t+1):
-            medians.append(np.median(x[i,i+t]))
+            medians.append(np.median(x[i:i+t]))
         return np.array(medians)
 
     def lookback_window(self, variable_lookbacks, params):
@@ -225,7 +225,7 @@ class SumO(Operator):
         x,t = variables[0], self._check_lookback(params[0])
         sums = []
         for i in range(len(x)-t+1):
-            sums.append(np.sum(x[i,i+t]))
+            sums.append(np.sum(x[i:i+t]))
         return np.array(sums)
 
     def lookback_window(self, variable_lookbacks, params):
@@ -242,7 +242,7 @@ class StdO(Operator):
         x,t = variables[0], self._check_lookback(params[0])
         stds = []
         for i in range(len(x)-t+1):
-            stds.append(np.std(x[i,i+t]))
+            stds.append(np.std(x[i:i+t]))
         return np.array(stds)
 
     def lookback_window(self, variable_lookbacks, params):
@@ -259,7 +259,7 @@ class MaxO(Operator):
         x,t = variables[0], self._check_lookback(params[0])
         maxs = []
         for i in range(len(x)-t+1):
-            maxs.append(np.max(x[i,i+t]))
+            maxs.append(np.max(x[i:i+t]))
         return np.array(maxs)
 
     def lookback_window(self, variable_lookbacks, params):
@@ -276,7 +276,7 @@ class MinO(Operator):
         x,t = variables[0], self._check_lookback(params[0])
         mins = []
         for i in range(len(x)-t+1):
-            mins.append(np.max(x[i,i+t]))
+            mins.append(np.min(x[i:i+t]))
         return np.array(mins)
 
     def lookback_window(self, variable_lookbacks, params):
@@ -295,7 +295,7 @@ class RankO(Operator):
         for i in range(len(x)-t+1):
             rank = 1
             val = x[i]
-            for other in x[i+1,i+t]:
+            for other in x[i+1:i+t]:
                 if other < val:
                     rank += 1
             ranks.append(rank)
@@ -315,7 +315,7 @@ class SkewO(Operator):
         x,t = variables[0], self._check_lookback(params[0])
         skews = []
         for i in range(len(x)-t+1):
-            skews.append(skew(x[i,i+t]))
+            skews.append(skew(x[i:i+t]))
         return np.array(skews)
 
     def lookback_window(self, variable_lookbacks, params):
@@ -332,7 +332,7 @@ class KurtO(Operator):
         x,t = variables[0], self._check_lookback(params[0])
         kurts = []
         for i in range(len(x)-t+1):
-            kurts.append(kurtosis(x[i,i+t]))
+            kurts.append(kurtosis(x[i:i+t]))
         return np.array(kurts)
 
     def lookback_window(self, variable_lookbacks, params):
@@ -379,7 +379,8 @@ class ZscoreO(Operator):
     def _calc(self, variables, params):
         ma = MaO._calc(self,variables,params)
         std = StdO._calc(self,variables,params)
-        return (variables[0] - ma) / std
+        L = min(len(ma),len(std))
+        return (variables[0][:L] - ma[:L]) / std[:L]
 
     def lookback_window(self, variable_lookbacks, params):
         return self._rolling_lookback(variable_lookbacks, params)
@@ -528,7 +529,7 @@ class CovO(Operator):
         covariance = []
         for i in range(window - t + 1):
             m = np.vstack([x[i:i+t],y[i:i+t]])
-            covariance.append(np.cov(m[0,1]))
+            covariance.append(np.cov(m,ddof=0)[0,1])
         return np.array(covariance,dtype=np.float32)
 
     def lookback_window(self, variable_lookbacks, params):
@@ -553,7 +554,7 @@ class CorrO(Operator):
         return max(variable_lookbacks) + self._check_lookback(params[0]) - 1
 
 _OPERATORS = [NegO(),AbsO(),PowerO(),SignO(),SinO(),CosO(),TanhO(),LogO(),DelayO(),DiffO(),PctO(),
-              MaO(),MedO,SumO(),StdO(),MaxO(),MinO(),RankO(),SkewO(),KurtO(),VariO(),AutocorrO(),ZscoreO(),
+              MaO(),MedO(),SumO(),StdO(),MaxO(),MinO(),RankO(),SkewO(),KurtO(),VariO(),AutocorrO(),ZscoreO(),
               AddAO(),AddPO(),SubAO(),SubPO(),MulAO(),MulPO(),DivAO(),DivPO(),GreaterAO(),GreaterPO(), LessAO(), LessPO(),
               CovO(), CorrO()]       
 

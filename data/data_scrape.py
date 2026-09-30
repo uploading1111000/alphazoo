@@ -134,7 +134,7 @@ def get_date_range_lookback(begin, end, lookback=90, forward=20):
     for meta in ticker_meta:
         min_date = pd.to_datetime(meta["min_date"])
         max_date = pd.to_datetime(meta["max_date"])
-        if min_date > begin or max_date <= end:
+        if min_date >= begin or max_date < end:
             continue
         ticker_df = pd.read_csv(meta['file'],parse_dates=[0])
         ticker_df.sort_values('Date',ascending=False,inplace=True)
