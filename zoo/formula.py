@@ -23,8 +23,8 @@ def validate_code(code,arguments,window=90): #not sure how to handle the window 
         if not name in OPERATORS:
             return f"Invalid code. Line {i} has an invalid operator."
         operator = OPERATORS[name]
-        if len(variables) != operator.n_arguments:
-            return f"Invalid code. Line {i} has invalid number of inputs (expected {operator.n_arguments}, received {len(variables)})"
+        if len(variables) != operator.n_variables:
+            return f"Invalid code. Line {i} has invalid number of inputs (expected {operator.n_variables}, received {len(variables)})"
         if len(params) != operator.n_parameters:
             return f"Invalid code. Line {i} has invalid number of parameters (expected {operator.n_parameters}, received {len(param)})"
         for variable in variables:
