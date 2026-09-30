@@ -2,6 +2,9 @@ import numpy as np
 import warnings
 from scipy.stats import skew, kurtosis
 
+#TODO: redesign operator. rename arguments to variables, calculate should really take variables and parameters seperately, like _calc already does but with error checking
+#TODO: add lookback window (I will do this manually after redesign)
+
 class Operator():
     n_arguments = 1
     n_parameters = 0
@@ -12,10 +15,9 @@ class Operator():
     def __call__(self, args):
         return self.calculate(args)
 
-    def calculate(self,args):
+    def calculate(self,args): 
         arguments, params = self.arg_check(args)
         return self._calc(arguments,params)
-    
 
     def arg_check(self, args):
         if len(args) != self.n_arguments + self.n_parameters:
@@ -39,6 +41,9 @@ class Operator():
     def _calc(self, arguments, params):
         warnings.warn("Passthrough operator (noop) ran")
         return arguments[0]
+
+    def lookback_window(self,variable_lookbacks,params):
+        return max(variable_lookbacks)
 
 class NegO(Operator):
     n_arguments = 1

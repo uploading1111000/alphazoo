@@ -165,6 +165,7 @@ def get_date_range_lookback(begin, end, lookback=90, forward=20):
         period_data_list.append(ticker_data)
     return period_data_list
 
+AVAILABLE_FIELDS = ["close","open","high","low","volume"]
 AVAILABLE_FIELDS_STRING = """close - The stock price at the end of the trading day
 open - The stock price at the beginning of the trading day
 high - The maximum stock price over the trading day
