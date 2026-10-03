@@ -62,18 +62,18 @@ def validate_lookback(code,arguments,window):
             return f"Argument {j} produces lookback window larger than allowed (Argument: {lookback}, permitted window: {window})"
     return "valid"
         
-    
-    
 class Formula():
     def __init__(self,parent): #dict-form pseudocode and code, might make it easier to errorcheck
         self.parent = parent
         self.children = []
         self.arg_i = 0
+        self.visits = 1
 
     def add_code(self,formula):
         self.arg_list = formula["arguments"]
         self.ofr_reviews = [None] * len(formula["arguments"])
         self.code = formula["formula"]
+        self.code_string = json.dumps(self.code,indent=5)
         self.formula_string = json.dumps(formula,indent=5)
         return validate_code(self.code,self.arg_list)
 
@@ -111,6 +111,13 @@ class Formula():
     def apply_args(self,i):
         self.arg_i = i
 
+    def set_atts(self,scores,ranks,a_score,predictions):
+        self.scores = scores
+        self.ranks = ranks
+        self.a_score = a_score
+        self.Q = a_score
+        self.predictions = predictions
+
     def best_args(self,i):
         self.arg_list = [self.arg_list[i]]
         self.ofr_reviews = [self.ofr_reviews[i]]
@@ -120,9 +127,15 @@ class Formula():
         self.ofr_reviews[self.arg_i] = review
 
     def alpha(self):
-        #return pseudocode or formula or whatever with best params
-        pass
+        return f"""Alpha name:{self.name}
+        Alpha description:{self.description}
+        Alpha code:{self.code_string}
+        Arguments:{json.dumps(self.arg_list[self.arg_i],indent=5)}"""
+
 
     def refinement_history(self):
-        #return refinement history from parents (recursively?)
-        pass
+        if self.parent is None:
+            return "This formula has no refinement history (has been generated from first principles)"
+        if self.parent.parent is None:
+            return "In reverse history from root node to alpha parent:\n" + self.parent.alpha()
+        return self.parent.refinement_history() + "\n" + self.parent.alpha()

@@ -70,10 +70,12 @@ class alpha_backtester():
             predictions.append(self._most_recent_predictions)
         best_i = np.argmax(a_scores)
         formula.best_args(best_i)
-        formula.scores = scores_more[best_i]
-        formula.ranks = ranks_more[best_i]
-        formula.a_score = a_scores[best_i]
-        formula.predictions = predictions[best_i]
+        formula.set_atts(
+            scores_more[best_i],
+            ranks_more[best_i],
+            a_scores[best_i],
+            predictions[best_i]
+        )
         return a_scores[best_i]
 
     def add_zoo(self, formula=None):

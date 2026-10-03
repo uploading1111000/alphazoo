@@ -1,2 +1,2 @@
-from .backtest import alpha_backtester, get_date_range_lookback
+from .backtest import alpha_backtester
 from .data_scrape import AVAILABLE_FIELDS

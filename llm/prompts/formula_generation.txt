@@ -6,7 +6,7 @@ Available Data Fields:
 Available Operators:
 • The following operators are available for use: 
 {available_operators}
-Alpha Requirements:
+Alpha Portrait:
 {alpha_portrait_prompt}
 Formatting Requirements:
 1. Format the output as JSON, but do not use backticks to surround the JSON in a codeblock. Stop as soon as the final brace is written.

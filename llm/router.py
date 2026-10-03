@@ -62,19 +62,107 @@ class model():
                 "role": "user"
             }
         ]
-        res = self.client.chat.send(
-                    messages = messages,
-                    stream=False,
-                    reasoning={"enabled": False},
-                    session_id=self.sessionid,
-                    model=self.model_name,
-                    temperature=portrait_T
-        )
-        content = res.choices[0].message.content
-        print(content)
-        json.loads(content)
+        for x in range(10):
+            res = self.client.chat.send(
+                messages = messages,
+                stream=False,
+                reasoning={"enabled": False},
+                session_id=self.sessionid,
+                model=self.model_name,
+                temperature=portrait_T
+            )
+            content = res.choices[0].message.content
+            try:
+                returnable = json.loads(content)
+            except json.decoder.JSONDecodeError:
+                print(f"Portrait prompt failed {x+1} time(s).")
+                continue
+            if type(returnable) is dict:
+                if "name" in returnable and "description" in returnable and "pseudocode" in returnable:
+                    return returnable
+            print(f"Portrait prompt failed {x+1} time(s).")
+            
+        else:
+            raise RuntimeError("Failed to generate valid portrait prompt after 10 tries")
 
+    def generate_code(self, portrait_prompt, window=90):
+        self.retries = 0
+        prompt = PORTRAIT_PROMPT.format(
+            available_operators=AVAILABLE_OPERATORS_STRING,
+            available_fields=AVAILABLE_FIELDS_STRING,
+            alpha_portrait_prompt=portrait_prompt,
+            window_size = str(window)
+        ) + FORMULA_EXAMPLE
+        messages = [
+            {
+                "content": SYSTEM_PROMPT,
+                "role": "system"
+            },
+            {
+                "content": prompt,
+                "role": "user"
+            }
+        ]
+        for x in range(10):
+            res = self.client.chat.send(
+                messages = messages,
+                stream=False,
+                reasoning={"enabled": False},
+                session_id=self.sessionid,
+                model=self.model_name,
+                temperature=formula_T
+            )
+            content = res.choices[0].message.content
+            try:
+                returnable = json.loads(content)
+            except json.decoder.JSONDecodeError:
+                print(f"Code prompt failed {x+1} time(s).")
+                continue
+            if type(returnable) is dict:
+                if "formula" in returnable and "arguments" in returnable:
+                    self._last_code_messages = messages + [{
+                        "content": content,
+                        "role": "assistant"
+                    }]
+                    return returnable
+            print(f"Code prompt failed {x+1} time(s).")
+        else:
+            raise RuntimeError("Failed to generate valid code prompt after 10 tries")
 
+    def generate_code_retry(self, failiure_reason):
+        self.retries += 1
+        print(f"Code retry! ({self.retries + 1})")
+        prompt = f"Code was valid JSON but failed for following reason:\n{failiure_reason}\nTry again:"
+        messages = self._last_code_messages + [{
+            "content": prompt,
+            "role": "user"
+        }]
+        for x in range(10):
+            res = self.client.chat.send(
+                messages = messages,
+                stream=False,
+                reasoning={"enabled": False},
+                session_id=self.sessionid,
+                model=self.model_name,
+                temperature=illegal_T
+            )
+            content = res.choices[0].message.content
+            try:
+                returnable = json.loads(content)
+            except json.decoder.JSONDecodeError:
+                print(f"Code prompt failed {x+1} time(s).")
+                continue
+            if type(returnable) is dict:
+                if "formula" in returnable and "arguments" in returnable:
+                    self._last_code_messages = messages + [{
+                        "content": content,
+                        "role": "assistant"
+                    }]
+                    return returnable
+            print(f"Code prompt failed {x+1} time(s).")
+        else:
+            raise RuntimeError("Failed to generate valid code prompt after 10 tries")
+        
     def overfitting_risk(self,alpha_formula,refinement_history):
         prompt = OVERFITTING_PROMPT.format(
             alpha_formula=alpha_formula,
