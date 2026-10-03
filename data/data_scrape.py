@@ -122,6 +122,33 @@ def trading_days():
     return datetimes
 
 def get_date_range_lookback(begin, end, lookback=90, forward=20):
+    if lookback < 0 or forward < 0:
+        raise ValueError("lookback and forward must be non-negative")
+
+    calendar = pd.DatetimeIndex(trading_days()).normalize().unique().sort_values()
+    begin = pd.Timestamp(begin).normalize()
+    end = pd.Timestamp(end).normalize()
+    if begin >= end:
+        raise ValueError("begin must be earlier than end")
+
+    evaluation_dates = calendar[(calendar >= begin) & (calendar < end)]
+    if evaluation_dates.empty:
+        raise ValueError("The requested interval contains no trading days")
+
+    first_eval = calendar.get_indexer([evaluation_dates[0]])[0]
+    last_eval = calendar.get_indexer([evaluation_dates[-1]])[0]
+    first_required = first_eval - lookback - forward - 1
+    end_required = last_eval + 1
+    if first_required < 0 or end_required > len(calendar):
+        raise ValueError(
+            "The trading calendar does not include the full lookback and forward window"
+        )
+
+    # Keep forward-return outcomes within [begin, end); acquire their signal history before begin.
+    # One shared, newest-first index keeps every ticker's array positions aligned.
+    required_dates = calendar[first_required:end_required][::-1]
+    required_fields = ["Open", "High", "Low", "Close", "Volume"]
+
     try:
         with open(TICKER_PATH + "meta.json",'r') as f:
             ticker_meta = json.load(f)
@@ -132,37 +159,31 @@ def get_date_range_lookback(begin, end, lookback=90, forward=20):
             ticker_meta = json.load(f)
     period_data_list = []
     for meta in ticker_meta:
-        min_date = pd.to_datetime(meta["min_date"])
-        max_date = pd.to_datetime(meta["max_date"])
-        if min_date >= begin or max_date < end:
+        ticker_df = pd.read_csv(meta['file'], parse_dates=[0])
+        if not set(required_fields).issubset(ticker_df.columns):
             continue
-        ticker_df = pd.read_csv(meta['file'],parse_dates=[0])
-        ticker_df.sort_values('Date',ascending=False,inplace=True)
+        if ticker_df["Date"].duplicated().any():
+            continue
 
-        for i,date in enumerate(ticker_df['Date']):
-            if date < end:
-                first_index = i
-                break
-        else:
+        ticker_df["Date"] = pd.to_datetime(ticker_df["Date"]).dt.normalize()
+        aligned = ticker_df.set_index("Date")[required_fields].reindex(required_dates)
+        aligned = aligned.apply(pd.to_numeric, errors="coerce")
+        if not np.isfinite(aligned.to_numpy(dtype=np.float64)).all():
             continue
-        for i,date in enumerate(ticker_df['Date']):
-            if date < begin:
-                second_index = i-1
-                break
-        else:
-            continue
-        third_index = second_index + lookback + forward
-        if third_index > ticker_df.shape[0]:
-            continue
-        ticker_period_df = ticker_df.iloc[first_index:third_index]
+
+        # Existing consumers expect one array per field, ordered newest first.
         ticker_data = {
-            "close": ticker_period_df['Close'].to_numpy(dtype=np.float32),
-            "open": ticker_period_df['Open'].to_numpy(dtype=np.float32),
-            "high": ticker_period_df['High'].to_numpy(dtype=np.float32),
-            "low": ticker_period_df['Low'].to_numpy(dtype=np.float32),
-            "volume": ticker_period_df['Volume'].to_numpy(dtype=np.float32)
+            "close": aligned["Close"].to_numpy(dtype=np.float32),
+            "open": aligned["Open"].to_numpy(dtype=np.float32),
+            "high": aligned["High"].to_numpy(dtype=np.float32),
+            "low": aligned["Low"].to_numpy(dtype=np.float32),
+            "volume": aligned["Volume"].to_numpy(dtype=np.float32)
         }
         period_data_list.append(ticker_data)
+    if not period_data_list:
+        raise ValueError(
+            "No ticker has complete finite OHLCV data for the requested window"
+        )
     return period_data_list
 
 AVAILABLE_FIELDS = ["close","open","high","low","volume"]
