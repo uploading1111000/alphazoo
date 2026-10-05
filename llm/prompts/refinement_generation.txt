@@ -2,9 +2,11 @@ Task Description:
 There is an alpha factor used in quantitative investment to predict asset price trends. Please improve it according to the following
 suggestions and provide the improved alpha expression.
 Available Data Fields:
-The following data fields are available for use: {available_fields}
+The following data fields are available for use:
+{available_fields}
 Available Operators:
-The following operators are available for use:{available_operators}
+The following operators are available for use:
+{available_operators}
 Alpha Suggestions:
 1. The alpha value should be dimensionless (unitless).
 2. All look-back windows and other numerical parameters used in the alpha calculation MUST be represented as named parameters in the pseudo-code. These parameter names MUST follow Python naming conventions (e.g., lookback period,

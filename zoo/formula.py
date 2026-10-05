@@ -132,10 +132,11 @@ class Formula():
         Alpha code:{self.code_string}
         Arguments:{json.dumps(self.arg_list[self.arg_i],indent=5)}"""
 
-
     def refinement_history(self):
         if self.parent is None:
             return "This formula has no refinement history (has been generated from first principles)"
         if self.parent.parent is None:
             return "In reverse history from root node to alpha parent:\n" + self.parent.alpha()
         return self.parent.refinement_history() + "\n" + self.parent.alpha()
+
+        
