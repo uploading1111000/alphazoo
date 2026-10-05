@@ -5,10 +5,11 @@ import random
 
 
 class MCT_searcher:
-    def __init__(self,backtester,model,zoo,B=3,b=1,prob_T=1,c=1,alph=0.5,k=1):
+    def __init__(self,backtester,model,zoo,router,B=3,b=1,prob_T=1,c=1,alph=0.5,k=1):
         self.backtester = backtester
         self.model = model
         self.zoo = zoo
+        self.router = router
         self.root = Formula(None)
         self.B = B
         self.b = b
