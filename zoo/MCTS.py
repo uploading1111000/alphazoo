@@ -1,11 +1,15 @@
 from .formula import Formula
 import numpy as np
+from scipy.special import softmax
+import random
+
 
 class MCT_searcher:
-    def __init__(self,backtester,model,zoo,B=3,b=1,prob_T=1,c=1,alph=0.5,k=1):
+    def __init__(self,backtester,model,zoo,router,B=3,b=1,prob_T=1,c=1,alph=0.5,k=1):
         self.backtester = backtester
         self.model = model
         self.zoo = zoo
+        self.router = router
         self.root = Formula(None)
         self.B = B
         self.b = b
@@ -46,7 +50,36 @@ class MCT_searcher:
 
     def explore_tree(self):
         expanded_node = self.UCT_traverse_recurse(self.root)
-        #...
+        probabilities = softmax(-expanded_node.ranks/self.prob_T)
+        dimension_choice = random.choices(range(5),weights=probabilities,k=1)[0]
+        examples = self.zoo.few_shot(expanded_node,dimension_choice)
+        alpha_prompt = expanded_node.alpha()
+        suggestion = self.router.generate_suggestion(
+            alpha_prompt,
+            examples,
+            DIMENSIONS[dimension_choice]
+        )
+        refinement_portrait = self.router.generate_refinement(self,alpha_prompt,suggestion)
+        new_formula = Formula(expanded_node)
+        expanded_node.children.append(new_formula)
+        new_formula.add_pseudocode(refinement_portrait)
+
+        code = self.model.generate_code(new_formula)
+        valid = self.root.add_code(code)
+        for x in range(10):
+            if valid != "valid":
+                code = self.model.generate_code_retry(valid)
+                valid = new_formula.add_pseudocode(refinement_portrait)
+
+        new_S = self.backtester.alpha_score(new_formula)
+        if new_S > self.max_S:
+            self.max_S = new_S
+            self.budget += self.b
+        parent = expanded_node
+        while parent is not None:
+            parent.Q = max(parent.Q, new_S)
+            parent = parent.parent
+        
         self.searches += 1
         return self.searches == self.budget
 
@@ -61,4 +94,4 @@ class MCT_searcher:
             UCTS = [child.Q + self.c * np.sqrt(ln/child.visits) for child in formula.children]
             return self.UCT_traverse_recurse(formula.children[np.argmax(UCTS)])
 
-
+DIMENSIONS = ["Effectiveness", "Stability", "Turnover", "Diversity", "Overfitting Risk"]

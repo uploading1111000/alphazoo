@@ -47,6 +47,73 @@ class model():
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.client.__exit__(exc_type, exc_val, exc_tb)
 
+    def generate_suggestion(self,alpha_formula,few_shot,dimension):
+        prompt = SUGGESTION_PROMPT.format(
+            alpha_formula = alpha_formula,
+            dimension_of_interest=dimension,
+            few_shot_examples=few_shot
+        )
+        messages = [
+            {
+                "content": SYSTEM_PROMPT,
+                "role": "system"
+            },
+            {
+                "content": prompt,
+                "role": "user"
+            }
+        ]
+        res = self.client.chat.send(
+                messages = messages,
+                stream=False,
+                reasoning={"enabled": False},
+                session_id=self.sessionid,
+                model=self.model_name,
+                temperature=suggestion_T
+        )
+        return res.choices[0].message.content
+
+    def generate_refinement(self,alpha_formula,suggestions):
+        prompt = REFINEMENT_PROMPT.format(
+            available_fields=AVAILABLE_FIELDS_STRING,
+            available_operators=AVAILABLE_OPERATORS_STRING,
+            origin_alpha_formula=alpha_formula,
+            refinement_suggestions=suggestions
+        )
+        messages = [
+            {
+                "content": SYSTEM_PROMPT,
+                "role": "system"
+            },
+            {
+                "content": prompt,
+                "role": "user"
+            }
+        ]
+        for x in range(10):
+            res = self.client.chat.send(
+                messages = messages,
+                stream=False,
+                reasoning={"enabled": False},
+                session_id=self.sessionid,
+                model=self.model_name,
+                temperature=refinement_T
+            )
+            content = res.choices[0].message.content
+            try:
+                returnable = json.loads(content)
+            except json.decoder.JSONDecodeError:
+                print(f"Refinement prompt failed {x+1} time(s).")
+                continue
+            if type(returnable) is dict:
+                if "name" in returnable and "description" in returnable and "pseudocode" in returnable:
+                    return returnable
+            print(f"Refinement prompt failed {x+1} time(s).")
+            
+        else:
+            raise RuntimeError("Failed to generate valid refinement prompt after 10 tries")
+    
+
     def generate_portrait(self): #rewrite like overfitting_risk
         prompt = PORTRAIT_PROMPT.format(
             available_operators=AVAILABLE_OPERATORS_STRING,

@@ -2,6 +2,7 @@ from .data_scrape import get_date_range_lookback
 import scipy.stats as ss
 import numpy as np
 
+
 def rank_in(score, past_scores):
     N = len(past_scores)
     assert N >= 5 #deal with small zoo case later
@@ -50,7 +51,7 @@ class alpha_backtester():
         scores.append(self.score_turnover())
         scores.append(self.score_diversity())
         scores.append(self.score_OFR(formula))
-        ranks = [1 - rank_in(scores[i],self.zoo.alpha_scores[i]) for i in range(5)]
+        ranks = np.array([1 - rank_in(scores[i],self.zoo.scores[i]) for i in range(5)])
         a_score = sum(ranks) / 5
         return scores, ranks, a_score
 
@@ -106,19 +107,9 @@ class alpha_backtester():
         if self.zoo.n == 0:
             return 0
         
-        zoo_predictions = self.zoo.prediction_matrix
+        m_correlations = self.zoo.prediction_correlations(self._most_recent_predictions)
 
-        reshaped_zoo = zoo_predictions.reshape((zoo_predictions.shape[0],self.universe_n*self.targets_n))
-        reshaped_predictions = self._most_recent_predictions.reshape((self.universe_n*self.targets_n))
-
-        centered_predictions = reshaped_predictions - np.mean(reshaped_predictions)
-        centered_zoo = reshaped_zoo - np.mean(reshaped_zoo,axis=1,keepdims=True)
-
-        std_predictions = np.linalg.norm(centered_predictions)
-        std_zoo = np.linalg.norm(centered_zoo,axis=1)
-
-        m_correlations = np.abs(np.dot(centered_zoo,centered_predictions)) / (std_predictions * std_zoo)
-        return -np.max(m_correlations)
+        return -np.max(np.abs(m_correlations))
 
     def score_OFR(self, formula):
         overfit_assessment = self.model.overfitting_risk(formula.alpha(),formula.refinement_history())
