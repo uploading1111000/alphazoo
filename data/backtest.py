@@ -15,7 +15,7 @@ def rank_in(score, past_scores):
         for past_score in past_scores
     ) / N
 
-class alpha_backtester():
+class Alpha_Backtester():
     def __init__(self, model, zoo, forward, lookback,begin,end,turnover_skip=5,turnover_top_p=0.1):
         self.model = model
         self.forward = forward
@@ -78,11 +78,6 @@ class alpha_backtester():
         )
         return a_scores[best_i]
 
-    def add_zoo(self, formula=None):
-        if formula != None:
-            self.score_all(formula)
-        self.zoo.add(formula)
-
     def score_effectiveness_stability(self):
         self._pred_ranks = np.zeros((self.targets_n,self.universe_n))
         RIC_t = np.zeros((self.targets_n))
@@ -100,7 +95,7 @@ class alpha_backtester():
         Ti = np.empty((self.targets_n-self.turnover_skip))
         for i in range(self.targets_n-self.turnover_skip):
             Ti[i] = len(selected[i].difference(selected[i+self.turnover_skip]))
-        return -np.mean(Ti)
+        return -np.mean(Ti)/(self.turnover_top_p*self.self.universe_n)
 
     def score_diversity(self):
         if self.zoo.n == 0:

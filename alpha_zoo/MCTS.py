@@ -1,15 +1,23 @@
 from .formula import Formula
+from .zoo import correlations
 import numpy as np
 from scipy.special import softmax
 import random
 
+def merge(lists):
+    return_list = []
+    pointers = [0 for l in lists]
+    while np.any([pointers[i] < len(lists[i]) for i in range(len(lists))]):
+        i = np.argmin([lists[i,pointers[i]] if pointers[i] < len(lists[i]) else np.inf for i in range(len(lists))])
+        return_list.append(lists[i,pointers[i]])
+        pointers[i] += 1
+    return return_list
 
 class MCT_searcher:
-    def __init__(self,backtester,model,zoo,router,B=3,b=1,prob_T=1,c=1,alph=0.5,k=1):
+    def __init__(self,backtester,model,zoo,B=3,b=1,prob_T=1,c=1,alph=0.5,k=1):
         self.backtester = backtester
         self.model = model
         self.zoo = zoo
-        self.router = router
         self.root = Formula(None)
         self.B = B
         self.b = b
@@ -101,5 +109,34 @@ class MCT_searcher:
             ln = np.log(N)
             UCTS = [child.Q + self.c * np.sqrt(ln/child.visits) for child in formula.children]
             return self.UCT_traverse_recurse(formula.children[np.argmax(UCTS)])
+
+    def a_score_traverse_recurse(self,formula):
+        recurse = [self.a_score_traverse_recurse(child) for child in formula.children] + [formula.a_score]
+        return merge(recurse)
+
+    def add_effective(self):
+        ordered = self.a_score_traverse_recurse(self.root)[::-1]
+        added_predictions = None
+        num = 0
+        for alpha in ordered:
+            if alpha.scores[0] >= 0.015 and alpha.scores[1] >= 0.3 and alpha.ranks[0] >= 0.05 and alpha.ranks[1] >= 0.05 and alpha.scores[2] > -1.6:
+                if added_predictions is not None:
+                    new_corrs = np.abs(correlations(alpha.predictions,added_predictions))
+                    max_corr = max(-alpha.scores[3],np.max(new_corrs))
+                    if max_corr < 0.8:
+                        num += 1
+                        self.zoo.add(alpha.zoo_member())
+                        added_predictions = np.concatenate((added_predictions,alpha.predictions),axis=0)
+                else:
+                    max_corr = -alpha.scores[3]
+                    if max_corr < 0.8:
+                        num += 1
+                        self.zoo.add(alpha.zoo_member())
+                        added_predictions = np.reshape(alpha.predictions,(1,alpha.predictions.shape[0],alpha.predictions.shape[1]))
+        return num
+            
+
+
+
 
 DIMENSIONS = ["Effectiveness", "Stability", "Turnover", "Diversity", "Overfitting Risk"]

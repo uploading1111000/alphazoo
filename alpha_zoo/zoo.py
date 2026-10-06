@@ -95,17 +95,18 @@ class Alpha_Zoo():
         return "\n".join([member.alpha for member in [self.formulas[i] for i in highest_ranks]])
 
     def prediction_correlations(self,prediction_matrix):
-        zoo_predictions = self.prediction_matrix
-        
-        reshaped_zoo = zoo_predictions.reshape((zoo_predictions.shape[0],self.universe_n*self.targets_n))
-        reshaped_predictions = prediction_matrix.reshape((self.universe_n*self.targets_n))
-        
-        centered_predictions = reshaped_predictions - np.mean(reshaped_predictions)
-        centered_zoo = reshaped_zoo - np.mean(reshaped_zoo,axis=1,keepdims=True)
-        
-        std_predictions = np.linalg.norm(centered_predictions)
-        std_zoo = np.linalg.norm(centered_zoo,axis=1)
-        
-        return np.dot(centered_zoo,centered_predictions) / (std_predictions * std_zoo)
+        return correlations(prediction_matrix,self.prediction_matrix)
 
-    
+def correlations(predictions,other_predictions):
+    universe_n = other_predictions.shape[1]
+    target_n = other_predictions.shape[2]
+    reshaped_other = other_predictions.reshape((other_predictions.shape[0],universe_n*target_n))
+    reshaped_predictions = predictions.reshape((universe_n,target_n))
+            
+    centered_predictions = reshaped_predictions - np.mean(reshaped_predictions)
+    centered_other = reshaped_other - np.mean(reshaped_other,axis=1,keepdims=True)
+            
+    std_predictions = np.linalg.norm(centered_predictions)
+    std_other = np.linalg.norm(centered_other,axis=1)
+            
+    return np.dot(centered_other,centered_predictions) / (std_predictions * std_other)
