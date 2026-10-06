@@ -137,7 +137,7 @@ def get_date_range_lookback(begin, end, lookback=90, forward=20):
 
     first_eval = calendar.get_indexer([evaluation_dates[0]])[0]
     last_eval = calendar.get_indexer([evaluation_dates[-1]])[0]
-    first_required = first_eval - lookback - forward - 1
+    first_required = first_eval - lookback - forward
     end_required = last_eval + 1
     if first_required < 0 or end_required > len(calendar):
         raise ValueError(

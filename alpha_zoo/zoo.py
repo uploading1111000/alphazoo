@@ -1,21 +1,16 @@
-#TODO: add names for each comment below when used in backtest.py
-#Needs formula for each member self.formulas(self.n)
-#Needs past scores in each dimension for each member self.scores(dimension, formula)
-#Needs predictions in each dimension for each member (diversity metric) - self.prediction_matrix(zoo_n,universe_n,target_n)
-#Needs .add() taking in above 3 as arguments 
-#Needs number of members - self.n
 from .formula import Formula
-from data import alpha_backtester
+from data import Alpha_Backtester
 import numpy as np
 from heapq import nsmallest, nlargest
 from operator import itemgetter
 import joblib
-ZOO_FILE_PATH = "zoo/zoo.pkl"
+import copy
+ZOO_FILE_PATH = "alpha_zoo/zoo.pkl"
 N_starters = 10
 
 class Alpha_Zoo():
     def create_starters(self,forward,lookback,begin,end):
-        starter_backtester = alpha_backtester(
+        starter_backtester = Alpha_Backtester(
             self.model,self,forward,lookback,begin,end)
         self.prediction_matrix = np.ndarray(
             (0,starter_backtester.universe_n,starter_backtester.targets_n))
@@ -29,21 +24,23 @@ class Alpha_Zoo():
             for x in range(10):
                 if valid != "valid":
                     code = self.model.generate_code_retry(valid)
-                    valid = self.root.add_code(portrait)
+                    valid = formula.add_code(code)
                 else:
                     break
             else:
-                raise RuntimeError("Failed to generate code after 10 retries")
+                if valid != "valid":
+                    raise RuntimeError("Failed to generate code after 10 retries")
 
             scores = starter_backtester.score_all(formula)
             predictions = starter_backtester._most_recent_predictions
             formula.set_atts(scores,None,None,predictions)
             self.add(formula.zoo_member())
+            print(f"Starter {i+1} generated and saved!")
 
     def add(self,formula):
         self.formulas.append(formula)
         reshaped_scores = np.reshape(formula.scores,(5,1))
-        reshaped_predictions = formula.predictions
+        reshaped_predictions = np.reshape(formula.predictions,(1,formula.predictions.shape[0],formula.predictions.shape[1]))
         
         self.scores = np.concatenate((self.scores,reshaped_scores),axis=1)
         self.prediction_matrix = np.concatenate((self.prediction_matrix,reshaped_predictions),axis=0)
@@ -60,13 +57,15 @@ class Alpha_Zoo():
             _path = path
         else:
             _path = ZOO_FILE_PATH
-        joblib.dump(self,_path)
+        no_model = copy.copy(self)
+        no_model.model = None
+        joblib.dump(no_model,_path)
 
     def load(path=None):
         if path is not None:
             _path = path
         else:
-            path = ZOO_FILE_PATH
+            _path = ZOO_FILE_PATH
         return joblib.load(_path)
 
     def __init__(self,model):
@@ -86,13 +85,13 @@ class Alpha_Zoo():
 
         if dimension_index == 3:
             lowest_correlations = nsmallest(K,enumerate(abs_correlations),key=itemgetter(1))
-            return "\n".join([member.alpha() for member in [self.formulas[i] for i in lowest_correlations]])
+            return "\n".join([member.alpha() for member in [self.formulas[i] for i,_ in lowest_correlations]])
 
         median = np.median(abs_correlations)
         bottom_percent_indices = [i for i,corr in enumerate(abs_correlations) if corr < median]
-        scores = [score if i in bottom_percent_indices else -np.inf for i,score in enumerate(self.score[dimension_index])]
+        scores = [score if i in bottom_percent_indices else -np.inf for i,score in enumerate(self.scores[dimension_index])]
         highest_ranks = nlargest(K,enumerate(scores),key=itemgetter(1))
-        return "\n".join([member.alpha for member in [self.formulas[i] for i in highest_ranks]])
+        return "\n".join([member.alpha() for member in [self.formulas[i] for i,_ in highest_ranks]])
 
     def prediction_correlations(self,prediction_matrix):
         return correlations(prediction_matrix,self.prediction_matrix)
@@ -101,7 +100,7 @@ def correlations(predictions,other_predictions):
     universe_n = other_predictions.shape[1]
     target_n = other_predictions.shape[2]
     reshaped_other = other_predictions.reshape((other_predictions.shape[0],universe_n*target_n))
-    reshaped_predictions = predictions.reshape((universe_n,target_n))
+    reshaped_predictions = predictions.reshape((universe_n*target_n))
             
     centered_predictions = reshaped_predictions - np.mean(reshaped_predictions)
     centered_other = reshaped_other - np.mean(reshaped_other,axis=1,keepdims=True)

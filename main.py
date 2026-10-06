@@ -15,6 +15,9 @@ with llm.Model() as model:
     i = 0
     while zoo.n < 20:
         i += 1
+        if i >= 20:
+            zoo.save()
+            raise RuntimeError("Too many tree searches completed with no alphas, exiting now!")
         print(f"Starting {i}th tree search...")
         mcts.start_new_tree()
         while not mcts.explore_tree():
@@ -25,4 +28,4 @@ with llm.Model() as model:
     zoo.remove_starters()
     zoo.save()
 
-#portfolio?
+#portfolio

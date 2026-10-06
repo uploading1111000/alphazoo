@@ -95,7 +95,7 @@ class Alpha_Backtester():
         Ti = np.empty((self.targets_n-self.turnover_skip))
         for i in range(self.targets_n-self.turnover_skip):
             Ti[i] = len(selected[i].difference(selected[i+self.turnover_skip]))
-        return -np.mean(Ti)/(self.turnover_top_p*self.self.universe_n)
+        return -np.mean(Ti)/(self.turnover_top_p*self.universe_n)
 
     def score_diversity(self):
         if self.zoo.n == 0:

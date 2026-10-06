@@ -106,7 +106,7 @@ class Model():
                 print(f"Refinement prompt failed {x+1} time(s).")
                 continue
             if type(returnable) is dict:
-                if "name" in returnable and "description" in returnable and "pseudocode" in returnable:
+                if "name" in returnable and "description" in returnable and "pseudo_code" in returnable:
                     return returnable
             print(f"Refinement prompt failed {x+1} time(s).")
             
@@ -145,7 +145,7 @@ class Model():
                 print(f"Portrait prompt failed {x+1} time(s).")
                 continue
             if type(returnable) is dict:
-                if "name" in returnable and "description" in returnable and "pseudocode" in returnable:
+                if "name" in returnable and "description" in returnable and "pseudo_code" in returnable:
                     return returnable
             print(f"Portrait prompt failed {x+1} time(s).")
             
@@ -154,11 +154,11 @@ class Model():
 
     def generate_code(self, portrait_prompt, window=90):
         self.retries = 0
-        prompt = PORTRAIT_PROMPT.format(
+        prompt = FORMULA_PROMPT.format(
             available_operators=AVAILABLE_OPERATORS_STRING,
             available_fields=AVAILABLE_FIELDS_STRING,
             alpha_portrait_prompt=portrait_prompt,
-            window_size = str(window)
+            window_range = str(window)
         ) + FORMULA_EXAMPLE
         messages = [
             {

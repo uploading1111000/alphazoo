@@ -8,8 +8,8 @@ def merge(lists):
     return_list = []
     pointers = [0 for l in lists]
     while np.any([pointers[i] < len(lists[i]) for i in range(len(lists))]):
-        i = np.argmin([lists[i,pointers[i]] if pointers[i] < len(lists[i]) else np.inf for i in range(len(lists))])
-        return_list.append(lists[i,pointers[i]])
+        i = np.argmin([lists[i][pointers[i]][0] if pointers[i] < len(lists[i]) else np.inf for i in range(len(lists))])
+        return_list.append(lists[i][pointers[i]])
         pointers[i] += 1
     return return_list
 
@@ -44,7 +44,7 @@ class MCT_searcher:
         self.budget = self.B
 
         self.root = Formula(None)
-        portrait = self.model.generate_portrait
+        portrait = self.model.generate_portrait()
         self.root.add_pseudocode(portrait)
 
         code = self.model.generate_code(self.root.portrait)
@@ -56,7 +56,8 @@ class MCT_searcher:
             else:
                 break
         else:
-            raise RuntimeError("Failed to create code after 10 retries")
+            if valid != "valid":
+                raise RuntimeError("Failed to create code after 10 retries")
 
         self.max_S = self.backtester.alpha_score(self.root)
 
@@ -71,13 +72,13 @@ class MCT_searcher:
             examples,
             DIMENSIONS[dimension_choice]
         )
-        refinement_portrait = self.model.generate_refinement(self,alpha_prompt,suggestion)
+        refinement_portrait = self.model.generate_refinement(alpha_prompt,suggestion)
         new_formula = Formula(expanded_node)
         expanded_node.children.append(new_formula)
         new_formula.add_pseudocode(refinement_portrait)
 
-        code = self.model.generate_code(new_formula)
-        valid = self.root.add_code(code)
+        code = self.model.generate_code(new_formula.portrait)
+        valid = new_formula.add_code(code)
         for x in range(10):
             if valid != "valid":
                 code = self.model.generate_code_retry(valid)
@@ -85,7 +86,8 @@ class MCT_searcher:
             else:
                 break
         else:
-            raise RuntimeError("Failed to create code after 10 retries")
+            if valid != "valid":
+                raise RuntimeError("Failed to create code after 10 retries")
 
         new_S = self.backtester.alpha_score(new_formula)
         if new_S > self.max_S:
@@ -111,22 +113,24 @@ class MCT_searcher:
             return self.UCT_traverse_recurse(formula.children[np.argmax(UCTS)])
 
     def a_score_traverse_recurse(self,formula):
-        recurse = [self.a_score_traverse_recurse(child) for child in formula.children] + [formula.a_score]
+        recurse = [self.a_score_traverse_recurse(child) for child in formula.children] + [[(formula.a_score,formula)]]
         return merge(recurse)
 
     def add_effective(self):
         ordered = self.a_score_traverse_recurse(self.root)[::-1]
         added_predictions = None
         num = 0
-        for alpha in ordered:
-            if alpha.scores[0] >= 0.015 and alpha.scores[1] >= 0.3 and alpha.ranks[0] >= 0.05 and alpha.ranks[1] >= 0.05 and alpha.scores[2] > -1.6:
+        for pair in ordered:
+            alpha = pair[1]
+            if alpha.scores[0] >= 0.015 and alpha.scores[1] >= 0.3 and alpha.ranks[0] >= 0.05 and alpha.ranks[1] >= 0.05 and -alpha.scores[2] < 0.8:
                 if added_predictions is not None:
                     new_corrs = np.abs(correlations(alpha.predictions,added_predictions))
                     max_corr = max(-alpha.scores[3],np.max(new_corrs))
                     if max_corr < 0.8:
                         num += 1
                         self.zoo.add(alpha.zoo_member())
-                        added_predictions = np.concatenate((added_predictions,alpha.predictions),axis=0)
+                        reshaped_predictions = np.reshape(alpha.predictions,(1,alpha.predictions.shape[0],alpha.predictions.shape[1]))
+                        added_predictions = np.concatenate((added_predictions,reshaped_predictions),axis=0)
                 else:
                     max_corr = -alpha.scores[3]
                     if max_corr < 0.8:

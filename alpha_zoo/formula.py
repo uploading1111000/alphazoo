@@ -6,7 +6,7 @@ import numpy as np
 
 def validate_code(code,arguments,window=90): #not sure how to handle the window so far, seems silly to keep window around as a member of every class
     #this will probably have to update as we see whatever nonsensical things the LLM comes up with
-    if len(parameters) == 0:
+    if len(arguments) == 0:
         return f"Invalid arguments. No arguments supplied"
     parameters = arguments[0].keys()
     for i, params in enumerate(arguments):
