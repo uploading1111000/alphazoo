@@ -11,7 +11,7 @@ def validate_code(code,arguments,window=90): #not sure how to handle the window 
     parameters = arguments[0].keys()
     for i, params in enumerate(arguments):
         if params.keys() != parameters:
-            return f"Invalid arguments. Argument {i} doesnt have the same parameters as argument {0}"
+            return f"Invalid arguments. Argument {i+1} doesnt have the same parameters as argument 0"
 
     available_variables = set(AVAILABLE_FIELDS)
     for i,line in enumerate(code):
@@ -59,7 +59,7 @@ def validate_lookback(code,arguments,window):
             available_variables[output] = lookback_window
         lookback = max(available_variables.values())
         if lookback > window:
-            return f"Argument {j} produces lookback window larger than allowed (Argument: {lookback}, permitted window: {window})"
+            return f"Argument {j+1} produces lookback window larger than allowed (Argument: {lookback}, permitted window: {window})"
     return "valid"
         
 class Formula():

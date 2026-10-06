@@ -13,6 +13,7 @@ Alpha Requirements:
 4. The alpha should have NO MORE than 3 parameters in total.
 5. The pseudo-code should represent the alpha calculation step-by-step, using only the ”Available Operators” and clearly defined parameters. Each line in the pseudo-code should represent a single operation.
 6. Use descriptive variable names in the pseudo-code that clearly indicate the data they represent.
+7. Avoid division by zero at all costs e.g. percent change of a value that may be 0. Do NOT assume price fields will always differ!
 Formatting Requirements:
 The output must be in JSON format with three key-value pairs:
 1. ”name”: A short, descriptive name for the alpha (following Python variable naming style, e.g., price_volatility_ratio).

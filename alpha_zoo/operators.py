@@ -6,7 +6,7 @@ class Operator():
     n_variables = 1
     n_parameters = 0
     name = "Noop"
-    example = "Noop(x)"
+    example = "Noop(variable: x)"
     descriptor = "Does nothing"
 
     def __call__(self, variables, parameters):
@@ -52,7 +52,7 @@ class NegO(Operator):
     n_variables = 1
     n_parameters = 0
     name = 'Neg'
-    example = 'Neg(x)'
+    example = 'Neg(variable: x)'
     descriptor = 'The opposite value of x'
 
     def _calc(self, variables, params):
@@ -62,7 +62,7 @@ class AbsO(Operator):
     n_variables = 1
     n_parameters = 0
     name = 'Abs'
-    example = 'Abs(x)'
+    example = 'Abs(variable: x)'
     descriptor = 'The absolute value of x'
 
     def _calc(self, variables, params):
@@ -72,7 +72,7 @@ class PowerO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Pow"
-    example = "Pow(x,n)"
+    example = "Pow(variable: x, parameter: n)"
     descriptor = 'The value of x^n'
 
     def _calc(self, variables, params):
@@ -82,7 +82,7 @@ class SignO(Operator):
     n_variables = 1
     n_parameters = 0
     name = "Sign"
-    example = "Sign(x)"
+    example = "Sign(variable: x)"
     descriptor = "Returns -1 for x < 0, 1 for x > 0, 0 for x==0"
 
     def _calc(self, variables, params):
@@ -92,7 +92,7 @@ class SinO(Operator):
     n_variables = 1
     n_parameters = 0
     name = "Sin"
-    example = "Sin(x)"
+    example = "Sin(variable: x)"
     descriptor = "The sine of x in radians"
 
     def _calc(self, variables, params):
@@ -102,7 +102,7 @@ class CosO(Operator):
     n_variables = 1
     n_parameters = 0
     name = "Cos"
-    example = "Cos(x)"
+    example = "Cos(variable: x)"
     descriptor = "The cosine of x in radians"
     
     def _calc(self, variables, params):
@@ -112,7 +112,7 @@ class TanhO(Operator):
     n_variables = 1
     n_parameters = 0
     name = "Tanh"
-    example = "Tanh(x)"
+    example = "Tanh(variable: x)"
     descriptor = "The hyperbolic tangent of x"
 
     def _calc(self, variables, params):
@@ -122,7 +122,7 @@ class LogO(Operator):
     n_variables = 1
     n_parameters = 0
     name = "Log"
-    example = "Log(x)"
+    example = "Log(variable: x)"
     descriptor = "The natural logarithm of x"
 
     def _calc(self, variables, params):
@@ -132,7 +132,7 @@ class DelayO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Delay"
-    example = "Delay(x,t)"
+    example = "Delay(variable: x, parameter: t)"
     descriptor = "The value of x at t trading days prior"
 
     def _calc(self, variables, params):
@@ -151,7 +151,7 @@ class DiffO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Diff"
-    example = "Diff(x,t)"
+    example = "Diff(variable: x, parameter: t)"
     descriptor = "The difference between x and the value t trading days prior (equiv to SubA(x,Delay(x,t)))"
     
     def _calc(self, variables, params):
@@ -184,7 +184,7 @@ class MaO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Ma"
-    example = "Ma(x,t)"
+    example = "Ma(variable: x, parameter: t)"
     descriptor = "The mean of x over the last t trading days"
             
     def _calc(self, variables, params):
@@ -201,7 +201,7 @@ class MedO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Med"
-    example = "Med(x,t)"
+    example = "Med(variable: x, parameter: t)"
     descriptor = "The median of x over the last t trading days"
                 
     def _calc(self, variables, params):
@@ -218,7 +218,7 @@ class SumO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Sum"
-    example = "Sum(x,t)"
+    example = "Sum(variable: x, parameter: t)"
     descriptor = "The sum of x over the last t trading days"
                     
     def _calc(self, variables, params):
@@ -235,7 +235,7 @@ class StdO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Std"
-    example = "Std(x,t)"
+    example = "Std(variable: x, parameter: t)"
     descriptor = "The standard deviation of x over the last t trading days"
                     
     def _calc(self, variables, params):
@@ -252,7 +252,7 @@ class MaxO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Max"
-    example = "Max(x,t)"
+    example = "Max(variable: x, parameter: t)"
     descriptor = "The maximum value of x over the last t trading days"
                     
     def _calc(self, variables, params):
@@ -269,7 +269,7 @@ class MinO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Min"
-    example = "Min(x,t)"
+    example = "Min(variable: x, parameter: t)"
     descriptor = "The minimum value of x over the last t trading days"
                     
     def _calc(self, variables, params):
@@ -286,7 +286,7 @@ class RankO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Rank"
-    example = "Rank(x,t)"
+    example = "Rank(variable: x, parameter: t)"
     descriptor = "The ranking of x relative to its values over the last t trading days"
                     
     def _calc(self, variables, params):
@@ -308,7 +308,7 @@ class SkewO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Skew"
-    example = "Skew(x,t)"
+    example = "Skew(variable: x, parameter: t)"
     descriptor = "The skewness value of x over the last t trading days"
                     
     def _calc(self, variables, params):
@@ -325,7 +325,7 @@ class KurtO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Kurt"
-    example = "Kurt(x,t)"
+    example = "Kurt(parameter: x, variable: t)"
     descriptor = "The kurtosis value of x over the last t trading days (Fisher)"
                     
     def _calc(self, variables, params):
@@ -342,7 +342,7 @@ class VariO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Vari"
-    example = "Vari(x,t)"
+    example = "Vari(parameter: x, variable: t)"
     descriptor = "The variation value of x over the last t trading days. Equivalent to DivA(Std(x,t),Ma(x,t))"
 
     def _calc(self, variables, params):
@@ -357,7 +357,7 @@ class AutocorrO(Operator):
     n_variables = 1
     n_parameters = 2
     name = "Autocorr"
-    example = "Autocorr(x,t,n)"
+    example = "Autocorr(variable: x, parameter: t, parameter: n)"
     descriptor = "The autocorrelation coefficient of x with a lag of n over the past t trading days. Equiv to Corr(x,Delay(x,n),t)"
 
     def _calc(self, variables, params):
@@ -373,14 +373,19 @@ class ZscoreO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "Zscore"
-    example = "Zscore(x,t)"
-    descriptor = "The z-score normalization of x based on the mean and standard deviation of its values over the past trading days. Equiv to DivA(SubA(x,Ma(x,t)),Std(x,t))"
+    example = "Zscore(variable: x, parameter: t)"
+    descriptor = "The z-score normalization of x based on the mean and standard deviation of its values over the past trading days. Equiv to DivA(SubA(x,Ma(x,t)),Std(x,t)). Returns 0 for zero-variance windows."
 
     def _calc(self, variables, params):
         ma = MaO._calc(self,variables,params)
         std = StdO._calc(self,variables,params)
         L = min(len(ma),len(std))
-        return (variables[0][:L] - ma[:L]) / std[:L]
+        return np.divide(
+            variables[0][:L] - ma[:L],
+            std[:L],
+            out=np.zeros(L, dtype=float),
+            where=std[:L] != 0,
+        )
 
     def lookback_window(self, variable_lookbacks, params):
         return self._rolling_lookback(variable_lookbacks, params)
@@ -389,8 +394,8 @@ class AddAO(Operator):
     n_variables = 2
     n_parameters = 0
     name = "AddA"
-    example = "AddA(x,y)"
-    descriptor = "Add two variables x + y"
+    example = "AddA(variable: x, variable: y)"
+    descriptor = "x + y"
 
     def _calc(self, variables, params):
         return variables[0] + variables[1]
@@ -399,8 +404,8 @@ class SubAO(Operator):
     n_variables = 2
     n_parameters = 0
     name = "SubA"
-    example = "SubA(x,y)"
-    descriptor = "Subtract two variables x - y"
+    example = "SubA(variable: x, variable: y)"
+    descriptor = "x - y"
 
     def _calc(self, variables, params):
         return variables[0] - variables[1]
@@ -409,8 +414,8 @@ class MulAO(Operator):
     n_variables = 2
     n_parameters = 0
     name = "MulA"
-    example = "MulA(x,y)"
-    descriptor = "Multiply two variables x * y"
+    example = "MulA(variable: x, variable: y)"
+    descriptor = "x * y"
 
     def _calc(self, variables, params):
         return variables[0] * variables[1]
@@ -419,8 +424,8 @@ class DivAO(Operator):
     n_variables = 2
     n_parameters = 0
     name = "DivA"
-    example = "DivA(x,y)"
-    descriptor = "Divide two variables x / y"
+    example = "DivA(variable: x, variable: y)"
+    descriptor = "x / y"
 
     def _calc(self, variables, params):
         return variables[0] / variables[1]
@@ -429,8 +434,8 @@ class AddPO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "AddP"
-    example = "AddP(x,n)"
-    descriptor = "Add variable x to parameter n"
+    example = "AddP(variable: x, parameter: n)"
+    descriptor = "x + n"
 
     def _calc(self, variables, params):
         return variables[0] + params[0]
@@ -439,8 +444,8 @@ class SubPO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "SubP"
-    example = "SubP(x,n)"
-    descriptor = "Subtract parameter n from variable x"
+    example = "SubP(variable: x, parameter: n)"
+    descriptor = "x - n"
 
     def _calc(self, variables, params):
         return variables[0] - params[0]
@@ -449,8 +454,8 @@ class MulPO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "MulP"
-    example = "MulP(x,n)"
-    descriptor = "Multiply variable x by parameter n"
+    example = "MulP(variable: x, parameter: n)"
+    descriptor = "x * n"
 
     def _calc(self, variables, params):
         return variables[0] * params[0]
@@ -459,8 +464,8 @@ class DivPO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "DivP"
-    example = "DivP(x,n)"
-    descriptor = "Divide variable x by parameter n"
+    example = "DivP(variable: x, parameter: n)"
+    descriptor = "x / n"
 
     def _calc(self, variables, params):
         return variables[0] / params[0]
@@ -469,7 +474,7 @@ class GreaterAO(Operator):
     n_variables = 2
     n_parameters = 0
     name = "GreaterA"
-    example = "GreaterA(x,y)"
+    example = "GreaterA(variable: x, variable: y)"
     descriptor = "1 if x>y, 0 otherwise"
 
     def _calc(self, variables, params):
@@ -481,7 +486,7 @@ class LessAO(Operator):
     n_variables = 2
     n_parameters = 0
     name = "LessA"
-    example = "LessA(x,y)"
+    example = "LessA(variable: x, variable: y)"
     descriptor = "1 if x<y, 0 otherwise"
 
     def _calc(self, variables, params):
@@ -493,7 +498,7 @@ class GreaterPO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "GreaterP"
-    example = "GreaterP(x,n)"
+    example = "GreaterP(variable: x, parameter: n)"
     descriptor = "1 if x>n, 0 otherwise"
 
     def _calc(self, variables, params):
@@ -504,7 +509,7 @@ class LessPO(Operator):
     n_variables = 1
     n_parameters = 1
     name = "LessP"
-    example = "LessP(x,n)"
+    example = "LessP(variable: x, parameter: n)"
     descriptor = "1 if x<n, 0 otherwise"
 
     def _calc(self, variables, params):
@@ -515,7 +520,7 @@ class CovO(Operator):
     n_variables = 2
     n_parameters = 1
     name = "Cov"
-    example = "Cov(x,y,t)"
+    example = "Cov(variable: x, variable: y, parameter: t)"
     descriptor = "Covariance of x and y over the last t trading days"
 
     def _calc(self, variables, params):
@@ -539,7 +544,7 @@ class CorrO(Operator):
     n_variables = 2
     n_parameters = 1
     name = "Corr"
-    example = "Corr(x,y,t)"
+    example = "Corr(variable: x, variable: y, parameter: t)"
     descriptor = "Correlation of x and y over the last t trading days. Equivalent to DivA(Cov(x,y,t),MulA(Std(x,t),Std(y,t)))"
 
     def _calc(self, variables, params):
@@ -562,5 +567,5 @@ OPERATORS = {}
 AVAILABLE_OPERATORS_STRING = ""
 for Op in _OPERATORS:
     OPERATORS[Op.name] = Op
-    AVAILABLE_OPERATORS_STRING = AVAILABLE_OPERATORS_STRING + "\n" + Op.example + " - " + Op.descriptor
+    AVAILABLE_OPERATORS_STRING = AVAILABLE_OPERATORS_STRING + Op.example + " - " + Op.descriptor + "\n"
 

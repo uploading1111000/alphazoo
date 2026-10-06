@@ -35,7 +35,7 @@ refinement_T = 1
 
 
 class Model():
-    def __init__(self,model_name="z-ai/glm-5.3-flash:floor"):
+    def __init__(self,model_name="google/gemini-3.5-flash-lite"):
         self.model_name = model_name
         self.api_key = dotenv_values(".env")["OPENROUTER_API_KEY"]
         self.client = OpenRouter(api_key = self.api_key)
@@ -66,7 +66,7 @@ class Model():
         res = self.client.chat.send(
                 messages = messages,
                 stream=False,
-                reasoning={"enabled": False},
+                reasoning={"effort": "medium"},
                 session_id=self.sessionid,
                 model=self.model_name,
                 temperature=suggestion_T
@@ -94,7 +94,7 @@ class Model():
             res = self.client.chat.send(
                 messages = messages,
                 stream=False,
-                reasoning={"enabled": False},
+                reasoning={"effort": "medium"},
                 session_id=self.sessionid,
                 model=self.model_name,
                 temperature=refinement_T
@@ -133,7 +133,7 @@ class Model():
             res = self.client.chat.send(
                 messages = messages,
                 stream=False,
-                reasoning={"enabled": False},
+                reasoning={"effort": "medium"},
                 session_id=self.sessionid,
                 model=self.model_name,
                 temperature=portrait_T
@@ -174,7 +174,7 @@ class Model():
             res = self.client.chat.send(
                 messages = messages,
                 stream=False,
-                reasoning={"enabled": False},
+                reasoning={"effort": "minimal"},
                 session_id=self.sessionid,
                 model=self.model_name,
                 temperature=formula_T
@@ -198,7 +198,7 @@ class Model():
 
     def generate_code_retry(self, failiure_reason):
         self.retries += 1
-        print(f"Code retry! ({self.retries + 1})")
+        print(f"Code retry! ({self.retries})")
         prompt = f"Code was valid JSON but failed for following reason:\n{failiure_reason}\nTry again:"
         messages = self._last_code_messages + [{
             "content": prompt,
@@ -208,7 +208,7 @@ class Model():
             res = self.client.chat.send(
                 messages = messages,
                 stream=False,
-                reasoning={"enabled": False},
+                reasoning={"effort": "low"},
                 session_id=self.sessionid,
                 model=self.model_name,
                 temperature=illegal_T
@@ -252,7 +252,7 @@ class Model():
             res = self.client.chat.send(
                 messages = messages,
                 stream=False,
-                reasoning={"enabled": False},
+                reasoning={"effort": "minimal"},
                 session_id=self.sessionid,
                 model=self.model_name,
                 temperature=overfit_T

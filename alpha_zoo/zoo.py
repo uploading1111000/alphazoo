@@ -12,6 +12,7 @@ class Alpha_Zoo():
     def create_starters(self,forward,lookback,begin,end):
         starter_backtester = Alpha_Backtester(
             self.model,self,forward,lookback,begin,end)
+        print("Loaded starter backtester")
         self.prediction_matrix = np.ndarray(
             (0,starter_backtester.universe_n,starter_backtester.targets_n))
         for i in range(N_starters):
@@ -35,7 +36,7 @@ class Alpha_Zoo():
             predictions = starter_backtester._most_recent_predictions
             formula.set_atts(scores,None,None,predictions)
             self.add(formula.zoo_member())
-            print(f"Starter {i+1} generated and saved!")
+            print(f"Starter {i+1} generated!")
 
     def add(self,formula):
         self.formulas.append(formula)
@@ -78,8 +79,10 @@ class Alpha_Zoo():
     def few_shot(self, formula, dimension_index):
         K = 3
 
-        if dimension_index in [2,4]:
+        if dimension_index == 2:
             return "No examples (This is a zero-shot task.)"
+        if dimension_index == 4:
+            return f"No examples (This is a zero-shot task.) \n Overfitting Feedback: \n {formula.ofr_reviews[0]}"
 
         abs_correlations = np.abs(self.prediction_correlations(formula.predictions))
 
@@ -88,7 +91,7 @@ class Alpha_Zoo():
             return "\n".join([member.alpha() for member in [self.formulas[i] for i,_ in lowest_correlations]])
 
         median = np.median(abs_correlations)
-        bottom_percent_indices = [i for i,corr in enumerate(abs_correlations) if corr < median]
+        bottom_percent_indices = set([i for i,corr in enumerate(abs_correlations) if corr < median])
         scores = [score if i in bottom_percent_indices else -np.inf for i,score in enumerate(self.scores[dimension_index])]
         highest_ranks = nlargest(K,enumerate(scores),key=itemgetter(1))
         return "\n".join([member.alpha() for member in [self.formulas[i] for i,_ in highest_ranks]])

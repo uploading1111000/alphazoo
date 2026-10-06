@@ -84,7 +84,11 @@ class Alpha_Backtester():
         for i in range(self.targets_n):
             self._pred_ranks[i] = ss.rankdata(self._most_recent_predictions[:,i])
             target_ranks = ss.rankdata(self.targets[:, i])
-            RIC_t[i] = ss.pearsonr(self._pred_ranks[i],target_ranks).statistic
+            pred_ranks = self._pred_ranks[i]
+            if np.ptp(pred_ranks) == 0:
+                RIC_t[i] = 0.0
+            else:
+                RIC_t[i] = ss.pearsonr(pred_ranks,target_ranks).statistic
         effectiveness = np.mean(RIC_t)
         stability = effectiveness / np.std(RIC_t)
         return [effectiveness, stability]

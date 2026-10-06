@@ -236,3 +236,4 @@ data/raw_data.csv
 data/quarters/
 data/tickers/
 data/tradeable_days.json
+*.pkl

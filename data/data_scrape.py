@@ -170,6 +170,8 @@ def get_date_range_lookback(begin, end, lookback=90, forward=20):
         aligned = aligned.apply(pd.to_numeric, errors="coerce")
         if not np.isfinite(aligned.to_numpy(dtype=np.float64)).all():
             continue
+        if np.any(np.equal(aligned['Volume'],np.zeros(len(aligned)))):
+            continue
 
         # Existing consumers expect one array per field, ordered newest first.
         ticker_data = {

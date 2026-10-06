@@ -15,6 +15,7 @@ volatility window, smoothing factor).
 4. The pseudo-code should represent the alpha calculation step-by-step, using only the ”Available Operators” and clearly defined
 parameters. Each line in the pseudo-code should represent a single operation.
 5. Use descriptive variable names in the pseudo-code that clearly indicate the data they represent.
+6. Avoid division by zero at all costs e.g. percent change of a value that may be 0. Do NOT assume price fields will always differ!
 Original alpha expression:
 {origin_alpha_formula}
 Refinement suggestions:
