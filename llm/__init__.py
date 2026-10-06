@@ -1,1 +1,1 @@
-from .router import model
+from .router import Model

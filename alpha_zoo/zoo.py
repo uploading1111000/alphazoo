@@ -1,0 +1,111 @@
+#TODO: add names for each comment below when used in backtest.py
+#Needs formula for each member self.formulas(self.n)
+#Needs past scores in each dimension for each member self.scores(dimension, formula)
+#Needs predictions in each dimension for each member (diversity metric) - self.prediction_matrix(zoo_n,universe_n,target_n)
+#Needs .add() taking in above 3 as arguments 
+#Needs number of members - self.n
+from .formula import Formula
+from data import alpha_backtester
+import numpy as np
+from heapq import nsmallest, nlargest
+from operator import itemgetter
+import joblib
+ZOO_FILE_PATH = "zoo/zoo.pkl"
+N_starters = 10
+
+class Alpha_Zoo():
+    def create_starters(self,forward,lookback,begin,end):
+        starter_backtester = alpha_backtester(
+            self.model,self,forward,lookback,begin,end)
+        self.prediction_matrix = np.ndarray(
+            (0,starter_backtester.universe_n,starter_backtester.targets_n))
+        for i in range(N_starters):
+            formula = Formula(None)
+            portrait = self.model.generate_portrait()
+            formula.add_pseudocode(portrait)
+
+            code = self.model.generate_code(formula.portrait)
+            valid = formula.add_code(code)
+            for x in range(10):
+                if valid != "valid":
+                    code = self.model.generate_code_retry(valid)
+                    valid = self.root.add_code(portrait)
+                else:
+                    break
+            else:
+                raise RuntimeError("Failed to generate code after 10 retries")
+
+            scores = starter_backtester.score_all(formula)
+            predictions = starter_backtester._most_recent_predictions
+            formula.set_atts(scores,None,None,predictions)
+            self.add(formula.zoo_member())
+
+    def add(self,formula):
+        self.formulas.append(formula)
+        reshaped_scores = np.reshape(formula.scores,(5,1))
+        reshaped_predictions = formula.predictions
+        
+        self.scores = np.concatenate((self.scores,reshaped_scores),axis=1)
+        self.prediction_matrix = np.concatenate((self.prediction_matrix,reshaped_predictions),axis=0)
+        self.n += 1
+
+    def remove_starters(self):
+        self.formulas = self.formulas[N_starters:]
+        self.scores = self.scores[:,N_starters:]
+        self.prediction_matrix = self.prediction_matrix[N_starters:]
+        self.n = self.n - N_starters
+
+    def save(self,path=None):
+        if path is not None:
+            _path = path
+        else:
+            _path = ZOO_FILE_PATH
+        joblib.dump(self,_path)
+
+    def load(path=None):
+        if path is not None:
+            _path = path
+        else:
+            path = ZOO_FILE_PATH
+        return joblib.load(_path)
+
+    def __init__(self,model):
+        self.model = model
+        self.formulas = []
+        self.prediction_matrix = np.ndarray((0,0,0))
+        self.scores = np.ndarray((5,0))
+        self.n = 0
+
+    def few_shot(self, formula, dimension_index):
+        K = 3
+
+        if dimension_index in [2,4]:
+            return "No examples (This is a zero-shot task.)"
+
+        abs_correlations = np.abs(self.prediction_correlations(formula.predictions))
+
+        if dimension_index == 3:
+            lowest_correlations = nsmallest(K,enumerate(abs_correlations),key=itemgetter(1))
+            return "\n".join([member.alpha() for member in [self.formulas[i] for i in lowest_correlations]])
+
+        median = np.median(abs_correlations)
+        bottom_percent_indices = [i for i,corr in enumerate(abs_correlations) if corr < median]
+        scores = [score if i in bottom_percent_indices else -np.inf for i,score in enumerate(self.score[dimension_index])]
+        highest_ranks = nlargest(K,enumerate(scores),key=itemgetter(1))
+        return "\n".join([member.alpha for member in [self.formulas[i] for i in highest_ranks]])
+
+    def prediction_correlations(self,prediction_matrix):
+        zoo_predictions = self.prediction_matrix
+        
+        reshaped_zoo = zoo_predictions.reshape((zoo_predictions.shape[0],self.universe_n*self.targets_n))
+        reshaped_predictions = prediction_matrix.reshape((self.universe_n*self.targets_n))
+        
+        centered_predictions = reshaped_predictions - np.mean(reshaped_predictions)
+        centered_zoo = reshaped_zoo - np.mean(reshaped_zoo,axis=1,keepdims=True)
+        
+        std_predictions = np.linalg.norm(centered_predictions)
+        std_zoo = np.linalg.norm(centered_zoo,axis=1)
+        
+        return np.dot(centered_zoo,centered_predictions) / (std_predictions * std_zoo)
+
+    

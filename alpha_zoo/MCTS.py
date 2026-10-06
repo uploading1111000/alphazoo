@@ -44,7 +44,11 @@ class MCT_searcher:
         for x in range(10):
             if valid != "valid":
                 code = self.model.generate_code_retry(valid)
-                valid = self.root.add_pseudocode(portrait)
+                valid = self.root.add_code(code)
+            else:
+                break
+        else:
+            raise RuntimeError("Failed to create code after 10 retries")
 
         self.max_S = self.backtester.alpha_score(self.root)
 
@@ -69,7 +73,11 @@ class MCT_searcher:
         for x in range(10):
             if valid != "valid":
                 code = self.model.generate_code_retry(valid)
-                valid = new_formula.add_pseudocode(refinement_portrait)
+                valid = new_formula.add_code(code)
+            else:
+                break
+        else:
+            raise RuntimeError("Failed to create code after 10 retries")
 
         new_S = self.backtester.alpha_score(new_formula)
         if new_S > self.max_S:

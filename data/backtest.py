@@ -51,10 +51,7 @@ class alpha_backtester():
         scores.append(self.score_turnover())
         scores.append(self.score_diversity())
         scores.append(self.score_OFR(formula))
-        ranks = np.array([1 - rank_in(scores[i],self.zoo.scores[i]) for i in range(5)])
-        a_score = sum(ranks) / 5
-        return scores, ranks, a_score
-
+        return scores
 
     #score formula, rank each in zoo, produce score
     def alpha_score(self, formula):
@@ -64,7 +61,9 @@ class alpha_backtester():
         predictions = []
         for i in range(len(formula.arg_list)):
             formula.apply_args(i)
-            scores, ranks, a_score = self.score_all(formula)
+            scores = self.score_all(formula)
+            ranks = np.array([1 - rank_in(scores[i],self.zoo.scores[i]) for i in range(5)])
+            a_score = sum(ranks) / 5
             scores_more.append(scores)
             ranks_more.append(ranks)
             a_scores.append(a_score)

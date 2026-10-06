@@ -1,7 +1,7 @@
 from openrouter import OpenRouter
 from dotenv import dotenv_values
 import uuid
-from zoo.operators import AVAILABLE_OPERATORS_STRING
+from alpha_zoo.operators import AVAILABLE_OPERATORS_STRING
 from data.data_scrape import AVAILABLE_FIELDS_STRING
 import json
 
@@ -34,7 +34,7 @@ suggestion_T = 1
 refinement_T = 1
 
 
-class model():
+class Model():
     def __init__(self,model_name="z-ai/glm-5.3-flash:floor"):
         self.model_name = model_name
         self.api_key = dotenv_values(".env")["OPENROUTER_API_KEY"]
