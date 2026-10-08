@@ -1,7 +1,7 @@
 from .data_scrape import get_date_range_lookback
 import scipy.stats as ss
 import numpy as np
-
+from constants import CUTOFF
 
 def rank_in(score, past_scores):
     N = len(past_scores)
@@ -44,6 +44,8 @@ class Alpha_Backtester():
                 trunc_history[key] = history[key][forward:]
             self.histories.append(trunc_history)
 
+        print(f"{self.targets_n} days loaded against {self.universe_n} tickers!")
+
     #score formula by 5 metrics
     def score_all(self,formula):
         self._most_recent_predictions = formula.apply(self.histories)[:,:self.targets_n] #(universe_n,targets_n)
@@ -62,7 +64,15 @@ class Alpha_Backtester():
         for i in range(len(formula.arg_list)):
             formula.apply_args(i)
             scores = self.score_all(formula)
-            ranks = np.array([1 - rank_in(scores[i],self.zoo.scores[i]) for i in range(5)])
+            #ranks = np.array([1 - rank_in(scores[i],self.zoo.scores[i]) for i in range(4)] + [scores[4]/10])
+            #STARTER
+            ranks = np.array([
+                1 if scores[0] > CUTOFF[0] else scores[0] / CUTOFF[0],
+                1 if scores[1] > CUTOFF[1] else scores[1] / CUTOFF[1],
+                1 if scores[2] > CUTOFF[2] else min(1.0, 2.0 - scores[2]/CUTOFF[2]),
+                1 if scores[3] > CUTOFF[3] else min(1.0, 2.0 - scores[3]/CUTOFF[3]),
+                scores[4] / 10
+            ])
             a_score = sum(ranks) / 5
             scores_more.append(scores)
             ranks_more.append(ranks)
@@ -82,11 +92,11 @@ class Alpha_Backtester():
         self._pred_ranks = np.zeros((self.targets_n,self.universe_n))
         RIC_t = np.zeros((self.targets_n))
         for i in range(self.targets_n):
-            self._pred_ranks[i] = ss.rankdata(self._most_recent_predictions[:,i])
-            target_ranks = ss.rankdata(self.targets[:, i])
+            self._pred_ranks[i] = ss.rankdata(self._most_recent_predictions[:,i],nan_policy="omit")
+            target_ranks = ss.rankdata(self.targets[:, i],nan_policy="omit")
             pred_ranks = self._pred_ranks[i]
-            if np.ptp(pred_ranks) == 0:
-                RIC_t[i] = 0.0
+            if np.ptp(pred_ranks) == 0 or np.any(np.isnan(pred_ranks)):
+                RIC_t[i] = 0
             else:
                 RIC_t[i] = ss.pearsonr(pred_ranks,target_ranks).statistic
         effectiveness = np.mean(RIC_t)

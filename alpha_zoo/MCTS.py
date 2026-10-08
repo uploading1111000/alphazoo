@@ -3,6 +3,7 @@ from .zoo import correlations
 import numpy as np
 from scipy.special import softmax
 import random
+from constants import CUTOFF
 
 def merge(lists):
     return_list = []
@@ -63,14 +64,17 @@ class MCT_searcher:
 
     def explore_tree(self):
         expanded_node = self.UCT_traverse_recurse(self.root)
-        probabilities = softmax(-expanded_node.ranks/self.prob_T)
+        scores = np.asarray(expanded_node.scores,dtype=float)
+        modified_ranks = np.where(scores < CUTOFF, 0.0, expanded_node.ranks)
+        probabilities = softmax(-modified_ranks/self.prob_T)
         dimension_choice = random.choices(range(5),weights=probabilities,k=1)[0]
         examples = self.zoo.few_shot(expanded_node,dimension_choice)
         alpha_prompt = expanded_node.alpha()
         suggestion = self.model.generate_suggestion(
             alpha_prompt,
             examples,
-            DIMENSIONS[dimension_choice]
+            DIMENSIONS[dimension_choice],
+            score_prompt(scores[dimension_choice],dimension_choice)
         )
         refinement_portrait = self.model.generate_refinement(alpha_prompt,suggestion)
         new_formula = Formula(expanded_node)
@@ -122,24 +126,41 @@ class MCT_searcher:
         num = 0
         for pair in ordered:
             alpha = pair[1]
-            if alpha.scores[0] >= 0.015 and alpha.scores[1] >= 0.3 and alpha.ranks[0] >= 0.05 and alpha.ranks[1] >= 0.05 and -alpha.scores[2] < 0.8:
-                if added_predictions is not None:
-                    new_corrs = np.abs(correlations(alpha.predictions,added_predictions))
-                    max_corr = max(-alpha.scores[3],np.max(new_corrs))
-                    if max_corr < 0.8:
-                        num += 1
-                        self.zoo.add(alpha.zoo_member())
-                        reshaped_predictions = np.reshape(alpha.predictions,(1,alpha.predictions.shape[0],alpha.predictions.shape[1]))
-                        added_predictions = np.concatenate((added_predictions,reshaped_predictions),axis=0)
+            if alpha.scores[0] < CUTOFF[0] or alpha.ranks[0] < 0.05:
+                print(f"Failed effectiveness. Score: {alpha.scores[0]}, Ranks: {alpha.ranks[0]}")
+                continue
+            if alpha.scores[1] < CUTOFF[1] or alpha.ranks[1] < 0.05:
+                print(f"Failed stability. Score: {alpha.scores[1]}, Ranks: {alpha.ranks[1]}")
+                continue
+            if alpha.scores[2] < CUTOFF[2]:
+                print(f"Failed turnover. Score: {-alpha.scores[2]}")
+                continue
+            if added_predictions is not None:
+                new_corrs = np.abs(correlations(alpha.predictions,added_predictions))
+                max_corr = max(-alpha.scores[3],np.max(new_corrs))
+                if -max_corr > CUTOFF[3]:
+                    num += 1
+                    self.zoo.add(alpha.zoo_member())
+                    reshaped_predictions = np.reshape(alpha.predictions,(1,alpha.predictions.shape[0],alpha.predictions.shape[1]))
+                    added_predictions = np.concatenate((added_predictions,reshaped_predictions),axis=0)
                 else:
-                    max_corr = -alpha.scores[3]
-                    if max_corr < 0.8:
-                        num += 1
-                        self.zoo.add(alpha.zoo_member())
-                        added_predictions = np.reshape(alpha.predictions,(1,alpha.predictions.shape[0],alpha.predictions.shape[1]))
+                    print(f"Failed diversity. Score: {max_corr}")
+            else:
+                max_corr = alpha.scores[3]
+                if max_corr > CUTOFF[3]:
+                    num += 1
+                    self.zoo.add(alpha.zoo_member())
+                    added_predictions = np.reshape(alpha.predictions,(1,alpha.predictions.shape[0],alpha.predictions.shape[1]))
+                else:
+                    print(f"Failed diversity. Score: {-max_corr}")
         return num
             
-
+def score_prompt(score,dim):
+    if dim in [0,1]:
+        return f"{score} (Cutoff for acceptance is >{CUTOFF[dim]})"
+    if dim in [2,3]:
+        return f"{-score} (Cutoff for acceptance is <{-CUTOFF[dim]})"
+    return str(score)
 
 
 

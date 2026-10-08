@@ -5,6 +5,7 @@ from heapq import nsmallest, nlargest
 from operator import itemgetter
 import joblib
 import copy
+from constants import CUTOFF
 ZOO_FILE_PATH = "alpha_zoo/zoo.pkl"
 N_starters = 10
 
@@ -94,7 +95,7 @@ class Alpha_Zoo():
         bottom_percent_indices = set([i for i,corr in enumerate(abs_correlations) if corr < median])
         scores = [score if i in bottom_percent_indices else -np.inf for i,score in enumerate(self.scores[dimension_index])]
         highest_ranks = nlargest(K,enumerate(scores),key=itemgetter(1))
-        return "\n".join([member.alpha() for member in [self.formulas[i] for i,_ in highest_ranks]])
+        return "\n".join([member.alpha() + f"\nScore:{member.scores[dimension_index]}" for member in [self.formulas[i] for i,_ in highest_ranks]])
 
     def prediction_correlations(self,prediction_matrix):
         return correlations(prediction_matrix,self.prediction_matrix)

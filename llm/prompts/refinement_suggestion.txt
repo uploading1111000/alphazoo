@@ -1,13 +1,20 @@
 Role & Task:
 You are an expert quantitative researcher specializing in formulaic alpha factor design and financial market dynamics. Your goal is to analyze a candidate alpha formula, identify its weaknesses along a specified dimension of interest, and propose a clear, conceptual refinement suggestion.  
 Context & Available Inputs
-1. Candidate Alpha Formula: 
-{alpha_formula}
-2. Dimension of Interest for Improvement:
+Possible Dimensions for Improvement: 
+Effectiveness - Average correlation coefficient between alpha formula stock rankings and stock performance rankings 20 days later
+Stability - Average correlation coefficient divided by standard deviation of correlation coefficient
+Turnover - Turnover of top-k portfolio evaluated after 5 days
+Diversity - Max correlation with other known alpha formulas
+Overfitting Risk - Risk of alpha being overfit (0 is extremely overfit, 10 is not overfit at all)
+1. Dimension of Interest for Improvement:
 {dimension_of_interest}
-(Possible dimensions: Effectiveness, Stability, Turnover, Diversity, or Overfitting Risk)
-3. Few-Shot Exemplars (Effective Reference Alphas):
-Below are example alpha formulas that perform exceptionally well on or address the dimension:
+2. Candidate Alpha Formula: 
+{alpha_formula}
+3. Current Alpha Score:
+{alpha_score}
+4. Few-Shot Exemplars (Effective Reference Alphas):
+Below are example alpha formulas that may perform exceptionally well on or address the dimension:
 {few_shot_examples}
 Instructions
 1. Analyze the Candidate Formula:

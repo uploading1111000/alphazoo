@@ -1,6 +1,8 @@
 from openrouter import OpenRouter
+from openrouter.errors.toomanyrequestsresponse_error import TooManyRequestsResponseError
 from dotenv import dotenv_values
 import uuid
+import time
 from alpha_zoo.operators import AVAILABLE_OPERATORS_STRING
 from data.data_scrape import AVAILABLE_FIELDS_STRING
 import json
@@ -26,7 +28,7 @@ with open("llm/prompts/overfit_examples.txt", encoding="utf-8") as f:
 SYSTEM_PROMPT ="""You are a highly capable quantitative researcher working on a project for finding alphas.
 You are helpful, and will comply with the user's requests exactly as laid out"""
 
-portrait_T = 1
+portrait_T = 1.2
 formula_T = 1
 illegal_T = 0.8
 overfit_T = 0.1
@@ -47,11 +49,27 @@ class Model():
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.client.__exit__(exc_type, exc_val, exc_tb)
 
-    def generate_suggestion(self,alpha_formula,few_shot,dimension):
+    def _send_chat(self, **kwargs):
+        for attempt in range(5):
+            try:
+                return self.client.chat.send(**kwargs)
+            except TooManyRequestsResponseError as exc:
+                if attempt == 4:
+                    raise
+                retry_after = exc.headers.get("Retry-After")
+                try:
+                    delay = float(retry_after) if retry_after is not None else 2 ** attempt
+                except ValueError:
+                    delay = 2 ** attempt
+                print(f"OpenRouter rate limit reached; retrying in {delay:g}s.")
+                time.sleep(delay)
+
+    def generate_suggestion(self,alpha_formula,few_shot,dimension,alpha_score):
         prompt = SUGGESTION_PROMPT.format(
             alpha_formula = alpha_formula,
             dimension_of_interest=dimension,
-            few_shot_examples=few_shot
+            few_shot_examples=few_shot,
+            alpha_score=alpha_score
         )
         messages = [
             {
@@ -63,10 +81,10 @@ class Model():
                 "role": "user"
             }
         ]
-        res = self.client.chat.send(
+        res = self._send_chat(
                 messages = messages,
                 stream=False,
-                reasoning={"effort": "medium"},
+                reasoning={"effort": "high"},
                 session_id=self.sessionid,
                 model=self.model_name,
                 temperature=suggestion_T
@@ -91,15 +109,17 @@ class Model():
             }
         ]
         for x in range(10):
-            res = self.client.chat.send(
+            res = self._send_chat(
                 messages = messages,
                 stream=False,
-                reasoning={"effort": "medium"},
+                reasoning={"effort": "high"},
                 session_id=self.sessionid,
                 model=self.model_name,
                 temperature=refinement_T
             )
             content = res.choices[0].message.content
+            if content is None:
+                continue
             try:
                 returnable = json.loads(content)
             except json.decoder.JSONDecodeError:
@@ -130,15 +150,17 @@ class Model():
             }
         ]
         for x in range(10):
-            res = self.client.chat.send(
+            res = self._send_chat(
                 messages = messages,
                 stream=False,
-                reasoning={"effort": "medium"},
+                reasoning={"effort": "high"},
                 session_id=self.sessionid,
                 model=self.model_name,
                 temperature=portrait_T
             )
             content = res.choices[0].message.content
+            if content is None:
+                continue
             try:
                 returnable = json.loads(content)
             except json.decoder.JSONDecodeError:
@@ -171,7 +193,7 @@ class Model():
             }
         ]
         for x in range(10):
-            res = self.client.chat.send(
+            res = self._send_chat(
                 messages = messages,
                 stream=False,
                 reasoning={"effort": "minimal"},
@@ -180,6 +202,8 @@ class Model():
                 temperature=formula_T
             )
             content = res.choices[0].message.content
+            if content is None:
+                continue
             try:
                 returnable = json.loads(content)
             except json.decoder.JSONDecodeError:
@@ -198,14 +222,13 @@ class Model():
 
     def generate_code_retry(self, failiure_reason):
         self.retries += 1
-        print(f"Code retry! ({self.retries})")
         prompt = f"Code was valid JSON but failed for following reason:\n{failiure_reason}\nTry again:"
         messages = self._last_code_messages + [{
             "content": prompt,
             "role": "user"
         }]
         for x in range(10):
-            res = self.client.chat.send(
+            res = self._send_chat(
                 messages = messages,
                 stream=False,
                 reasoning={"effort": "low"},
@@ -214,6 +237,8 @@ class Model():
                 temperature=illegal_T
             )
             content = res.choices[0].message.content
+            if content is None:
+                continue
             try:
                 returnable = json.loads(content)
             except json.decoder.JSONDecodeError:
@@ -249,15 +274,17 @@ class Model():
             }
         ]
         for x in range(10):
-            res = self.client.chat.send(
+            res = self._send_chat(
                 messages = messages,
                 stream=False,
-                reasoning={"effort": "minimal"},
+                reasoning={"effort": "low"},
                 session_id=self.sessionid,
                 model=self.model_name,
                 temperature=overfit_T
             )
             content = res.choices[0].message.content
+            if content is None:
+                continue
             try:
                 returnable = json.loads(content)
             except json.decoder.JSONDecodeError:
