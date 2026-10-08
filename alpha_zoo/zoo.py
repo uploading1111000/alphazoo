@@ -36,11 +36,11 @@ class Alpha_Zoo():
             scores = starter_backtester.score_all(formula)
             predictions = starter_backtester._most_recent_predictions
             formula.set_atts(scores,None,None,predictions)
-            self.add(formula.zoo_member())
+            self.add(formula)
             print(f"Starter {i+1} generated!")
 
     def add(self,formula):
-        self.formulas.append(formula)
+        self.formulas.append(formula.zoo_member())
         reshaped_scores = np.reshape(formula.scores,(5,1))
         reshaped_predictions = np.reshape(formula.predictions,(1,formula.predictions.shape[0],formula.predictions.shape[1]))
         

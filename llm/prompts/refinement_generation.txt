@@ -11,11 +11,10 @@ Alpha Suggestions:
 1. The alpha value should be dimensionless (unitless).
 2. All look-back windows and other numerical parameters used in the alpha calculation MUST be represented as named parameters in the pseudo-code. These parameter names MUST follow Python naming conventions (e.g., lookback period,
 volatility window, smoothing factor).
-3. The alpha should have NO MORE than 3 parameters in total.
-4. The pseudo-code should represent the alpha calculation step-by-step, using only the ”Available Operators” and clearly defined
+3. The pseudo-code should represent the alpha calculation step-by-step, using only the ”Available Operators” and clearly defined
 parameters. Each line in the pseudo-code should represent a single operation.
-5. Use descriptive variable names in the pseudo-code that clearly indicate the data they represent.
-6. Avoid division by zero at all costs e.g. percent change of a value that may be 0. Do NOT assume price fields will always differ!
+4. Use descriptive variable names in the pseudo-code that clearly indicate the data they represent.
+5. Avoid division by zero at all costs. Do NOT assume price fields will always differ!
 Original alpha expression:
 {origin_alpha_formula}
 Refinement suggestions:

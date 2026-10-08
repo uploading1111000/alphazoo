@@ -87,6 +87,7 @@ class Formula():
         z_member = copy.copy(self)
         z_member.parent = None
         z_member.children = None
+        z_member.predictions = None
         return z_member
 
     def apply(self, histories):

@@ -139,7 +139,7 @@ class MCT_searcher:
                 max_corr = max(-alpha.scores[3],np.max(new_corrs))
                 if -max_corr > CUTOFF[3]:
                     num += 1
-                    self.zoo.add(alpha.zoo_member())
+                    self.zoo.add(alpha)
                     reshaped_predictions = np.reshape(alpha.predictions,(1,alpha.predictions.shape[0],alpha.predictions.shape[1]))
                     added_predictions = np.concatenate((added_predictions,reshaped_predictions),axis=0)
                 else:
@@ -148,7 +148,7 @@ class MCT_searcher:
                 max_corr = alpha.scores[3]
                 if max_corr > CUTOFF[3]:
                     num += 1
-                    self.zoo.add(alpha.zoo_member())
+                    self.zoo.add(alpha)
                     added_predictions = np.reshape(alpha.predictions,(1,alpha.predictions.shape[0],alpha.predictions.shape[1]))
                 else:
                     print(f"Failed diversity. Score: {-max_corr}")
