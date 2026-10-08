@@ -64,15 +64,15 @@ class Alpha_Backtester():
         for i in range(len(formula.arg_list)):
             formula.apply_args(i)
             scores = self.score_all(formula)
-            #ranks = np.array([1 - rank_in(scores[i],self.zoo.scores[i]) for i in range(4)] + [scores[4]/10])
+            ranks = np.array([1 - rank_in(scores[i],self.zoo.scores[i]) for i in range(4)] + [scores[4]/10])
             #STARTER
-            ranks = np.array([
+            """ranks = np.array([
                 1 if scores[0] > CUTOFF[0] else scores[0] / CUTOFF[0],
                 1 if scores[1] > CUTOFF[1] else scores[1] / CUTOFF[1],
                 1 if scores[2] > CUTOFF[2] else min(1.0, 2.0 - scores[2]/CUTOFF[2]),
                 1 if scores[3] > CUTOFF[3] else min(1.0, 2.0 - scores[3]/CUTOFF[3]),
                 scores[4] / 10
-            ])
+            ])"""
             a_score = sum(ranks) / 5
             scores_more.append(scores)
             ranks_more.append(ranks)

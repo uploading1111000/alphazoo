@@ -37,7 +37,7 @@ refinement_T = 1
 
 
 class Model():
-    def __init__(self,model_name="google/gemini-3.5-flash-lite"):
+    def __init__(self,model_name="z-ai/glm-5.3-flash"):
         self.model_name = model_name
         self.api_key = dotenv_values(".env")["OPENROUTER_API_KEY"]
         self.client = OpenRouter(api_key = self.api_key)
@@ -196,7 +196,7 @@ class Model():
             res = self._send_chat(
                 messages = messages,
                 stream=False,
-                reasoning={"effort": "minimal"},
+                reasoning={"effort": "low"},
                 session_id=self.sessionid,
                 model=self.model_name,
                 temperature=formula_T

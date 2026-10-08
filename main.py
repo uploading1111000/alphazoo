@@ -15,12 +15,12 @@ with llm.Model() as model:
     zoo.model = model
     backtester = data.Alpha_Backtester(model,zoo,20,90,pd.to_datetime("2020-01-01"),pd.to_datetime("2025-01-01"))
     print("Loaded backtester")
-    mcts = alpha_zoo.MCT_searcher(backtester,model,zoo,prob_T=0.5)
+    mcts = alpha_zoo.MCT_searcher(backtester,model,zoo)
     print("Beginning zoo building")
     i = 0
-    while zoo.n < 30:
+    while zoo.n < 100:
         i += 1
-        if i >= 30:
+        if i >= 300:
             zoo.save()
             raise RuntimeError("Too many tree searches completed with no alphas, exiting now!")
         print(f"Starting {i}th tree search...")

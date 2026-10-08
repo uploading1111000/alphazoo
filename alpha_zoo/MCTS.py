@@ -15,7 +15,7 @@ def merge(lists):
     return return_list
 
 class MCT_searcher:
-    def __init__(self,backtester,model,zoo,B=3,b=1,prob_T=1,c=1,alph=0.5,k=1):
+    def __init__(self,backtester,model,zoo,B=3,b=1,prob_T=1,c=1):
         self.backtester = backtester
         self.model = model
         self.zoo = zoo
@@ -24,8 +24,6 @@ class MCT_searcher:
         self.b = b
         self.prob_T = prob_T
         self.c = c
-        self.alph = alph
-        self.k = k
 
     def start_new_tree(self,B=None,b=None,prob_T=None,c=None,alph=None,k=None):
         if B is not None:
@@ -99,7 +97,7 @@ class MCT_searcher:
             self.budget += self.b
         parent = expanded_node
         while parent is not None:
-            parent.Q = max(parent.Q, new_S)
+            parent.Q = max(new_S,parent.Q)
             parent = parent.parent
         
         self.searches += 1
@@ -109,12 +107,13 @@ class MCT_searcher:
         C = len(formula.children)
         N = formula.visits
         formula.visits += 1
-        if C < self.k * (N ** self.alph):
+        ln = np.log(N)
+        UCTS = [formula.a_score + self.c * np.sqrt(ln/(1+C))] + [child.Q + self.c * np.sqrt(ln/child.visits) for child in formula.children]
+        index = np.argmax(UCTS)
+        if index == 0:
             return formula
         else:
-            ln = np.log(N)
-            UCTS = [child.Q + self.c * np.sqrt(ln/child.visits) for child in formula.children]
-            return self.UCT_traverse_recurse(formula.children[np.argmax(UCTS)])
+            return self.UCT_traverse_recurse(formula.children[index-1])
 
     def a_score_traverse_recurse(self,formula):
         recurse = [self.a_score_traverse_recurse(child) for child in formula.children] + [[(formula.a_score,formula)]]
