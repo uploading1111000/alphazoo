@@ -3,6 +3,7 @@ import yfinance
 import requests
 import numpy as np
 import json
+from pathlib import Path
 
 
 RAW_DATA_PATH = 'data/'
@@ -55,6 +56,7 @@ def get_quarters():
     return quarters
         
 def split_tickers():
+    Path(TICKER_PATH).mkdir(parents=True, exist_ok=True)
     try:
         raw_df = pd.read_csv(RAW_DATA_PATH + 'raw_data.csv', parse_dates=[0])
     except FileNotFoundError:
