@@ -3,6 +3,8 @@ import yfinance
 import requests
 import numpy as np
 import json
+from io import StringIO
+from pathlib import Path
 
 
 RAW_DATA_PATH = 'data/'
@@ -15,7 +17,7 @@ def download():
         "User-Agent": "AlphaZooUK/1.0 (uploading1111000@gmail.com)"
     }
     response = requests.get(url, headers=headers)
-    tables = pd.read_html(response.text, match="Ticker")
+    tables = pd.read_html(StringIO(response.text), match="Ticker")
     tickers = [ticker + '.L' for ticker in tables[0]['Ticker'].tolist()]
     raw_df = yfinance.download(tickers,start='2019-01-01', repair=True)
     stack_df = raw_df.stack(level=1, future_stack=True).rename_axis(['Date', 'Ticker']).reset_index()
@@ -55,6 +57,7 @@ def get_quarters():
     return quarters
         
 def split_tickers():
+    Path(TICKER_PATH).mkdir(parents=True, exist_ok=True)
     try:
         raw_df = pd.read_csv(RAW_DATA_PATH + 'raw_data.csv', parse_dates=[0])
     except FileNotFoundError:

@@ -1,7 +1,7 @@
-yfinance
+yfinance[repair]
 pandas
 requests
-numpy<2.0
+numpy
 openrouter
 python-dotenv
 scipy
