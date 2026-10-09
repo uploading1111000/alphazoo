@@ -34,6 +34,8 @@ illegal_T = 0.8
 overfit_T = 0.1
 suggestion_T = 1
 refinement_T = 1
+MAX_COMPLETION_TOKENS = 4096
+MAX_REASONING_TOKENS = 2048
 
 
 class Model():
@@ -50,6 +52,13 @@ class Model():
         self.client.__exit__(exc_type, exc_val, exc_tb)
 
     def _send_chat(self, **kwargs):
+        kwargs["max_completion_tokens"] = MAX_COMPLETION_TOKENS
+        reasoning = kwargs.get("reasoning")
+        if reasoning is not None:
+            kwargs["reasoning"] = {
+                **reasoning,
+                "max_tokens": MAX_REASONING_TOKENS
+            }
         for attempt in range(5):
             try:
                 return self.client.chat.send(**kwargs)
