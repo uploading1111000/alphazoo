@@ -91,12 +91,13 @@ class Model():
         )
         return res.choices[0].message.content
 
-    def generate_refinement(self,alpha_formula,suggestions):
+    def generate_refinement(self,alpha_formula,suggestions,max_parameters):
         prompt = REFINEMENT_PROMPT.format(
             available_fields=AVAILABLE_FIELDS_STRING,
             available_operators=AVAILABLE_OPERATORS_STRING,
             origin_alpha_formula=alpha_formula,
-            refinement_suggestions=suggestions
+            refinement_suggestions=suggestions,
+            max_parameters=max_parameters
         )
         messages = [
             {

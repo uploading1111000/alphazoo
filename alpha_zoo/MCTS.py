@@ -74,7 +74,14 @@ class MCT_searcher:
             DIMENSIONS[dimension_choice],
             score_prompt(scores[dimension_choice],dimension_choice)
         )
-        refinement_portrait = self.model.generate_refinement(alpha_prompt,suggestion)
+        depth = 0
+        ancestor = expanded_node
+        while ancestor.parent is not None:
+            depth += 1
+            ancestor = ancestor.parent
+        refinement_portrait = self.model.generate_refinement(
+            alpha_prompt, suggestion, max_parameters=4 + depth
+        )
         new_formula = Formula(expanded_node)
         expanded_node.children.append(new_formula)
         new_formula.add_pseudocode(refinement_portrait)

@@ -15,6 +15,7 @@ volatility window, smoothing factor).
 parameters. Each line in the pseudo-code should represent a single operation.
 4. Use descriptive variable names in the pseudo-code that clearly indicate the data they represent.
 5. Avoid division by zero at all costs. Do NOT assume price fields will always differ!
+6. Parameter limit: use at most {max_parameters} distinct configurable parameters in total across the entire pseudo-code. Count unique parameter names, not the number of times they are used.
 Original alpha expression:
 {origin_alpha_formula}
 Refinement suggestions:

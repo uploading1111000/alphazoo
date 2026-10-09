@@ -55,7 +55,12 @@ def validate_lookback(code,arguments,window):
             operator = OPERATORS[name]
             variable_lookbacks = [available_variables[variable] for variable in variables]
             param_values = [parameters[param_name] for param_name in params]
-            lookback_window = operator.lookback_window(variable_lookbacks,param_values)
+            try:
+                lookback_window = operator.lookback_window(variable_lookbacks,param_values)
+            except (TypeError, ValueError) as exc:
+                return (
+                    f"Invalid arguments. Argument {j+1}, line {i} ({name}): {exc}"
+                )
             available_variables[output] = lookback_window
         lookback = max(available_variables.values())
         if lookback > window:
