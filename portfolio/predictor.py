@@ -1,7 +1,8 @@
 import numpy as np
 from sklearn.feature_selection import SequentialFeatureSelector
-from sklearn.linear_model import RidgeCV
+from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import HistGradientBoostingRegressor
 from data import initialize_prediction_data, get_date_range_lookback
 import joblib
 import pandas as pd
@@ -30,14 +31,13 @@ class Predictor:
         del prediction_matrix
         print("Features scaled")
 
-        regressor = RidgeCV()
         with joblib.parallel_config(
             backend="loky",
             max_nbytes=None,
             n_jobs=5
         ):
             self.SFS = SequentialFeatureSelector(
-                regressor,
+                Ridge(10),
                 n_features_to_select=n_alphas,
                 cv=cv
             )
@@ -45,10 +45,12 @@ class Predictor:
         del scaled_predictions
         print("Features selected")
 
-        self.regressor = regressor.fit(selected_train,targets)
-        print(f"Regressor fit. Score: {self.regressor.best_score_}")
+        self.regressor = HistGradientBoostingRegressor()
+
+        self.regressor.fit(selected_train,targets)
 
         joblib.dump(self,PREDICTOR_FILE_PATH)
+        print(f"Regressor fit. Score: {self.regressor.validation_score_[-1]}")
 
     def load():
         return joblib.load(PREDICTOR_FILE_PATH)
@@ -86,5 +88,5 @@ class Predictor:
         predictions = self.predict(self.histories)[:,:self.targets_n]
         R_i = np.zeros((self.targets_n))
         for day in range(self.targets_n):
-            R_i = np.corrcoef(self.targets[:,day],predictions[:,day])[0,1]
+            R_i[day] = np.corrcoef(self.targets[:,day],predictions[:,day])[0,1]
         print(np.mean(R_i))
