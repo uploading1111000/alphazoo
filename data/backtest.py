@@ -1,4 +1,4 @@
-from .data_scrape import get_date_range_lookback
+from .data_scrape import get_date_range_lookback, initialize_prediction_data
 import scipy.stats as ss
 import numpy as np
 from constants import CUTOFF
@@ -21,30 +21,10 @@ class Alpha_Backtester():
         self.forward = forward
         self.lookback = lookback
         self.zoo = zoo
-        self.universe = get_date_range_lookback(begin,end,lookback,forward)
-        self.universe_n = len(self.universe)
         self.turnover_skip = turnover_skip
         self.turnover_top_p = turnover_top_p
-
-        #targets
-        self.day_length = len(self.universe[0]["close"])
-        self.targets_n = self.day_length - forward - lookback
-        self.lookback_n = self.day_length - forward
-        self.targets = np.zeros((self.universe_n,self.targets_n))
-        self.targets[0] = self.universe[0]["close"][:self.targets_n] / self.universe[0]["close"][forward:forward+self.targets_n] - 1
-        for i, history in enumerate(self.universe[1:]):
-            assert len(history["close"]) == self.day_length
-            self.targets[i+1] = history["close"][:self.targets_n] / history["close"][forward:forward+self.targets_n] - 1
-
-        #universe_histories
-        self.histories = []
-        for history in self.universe:
-            trunc_history = {}
-            for key in history:
-                trunc_history[key] = history[key][forward:]
-            self.histories.append(trunc_history)
-
-        print(f"{self.targets_n} days loaded against {self.universe_n} tickers!")
+        universe = get_date_range_lookback(begin,end,lookback,forward)
+        initialize_prediction_data(self, universe, forward, lookback)
 
     #score formula by 5 metrics
     def score_all(self,formula):

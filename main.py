@@ -3,13 +3,14 @@ import alpha_zoo
 import llm
 import pandas as pd
 
-print("Opening Openrouter session")
+#zoo builder
+""" print("Opening Openrouter session")
 with llm.Model() as model:
-    """print("Openrouter session opened, generating starters...")
+    print("Openrouter session opened, generating starters...")
     zoo = alpha_zoo.Alpha_Zoo(model)
     zoo.create_starters(20,90,pd.to_datetime("2020-01-01"),pd.to_datetime("2025-01-01"))
     print("Starters generated")
-    zoo.save()"""
+    zoo.save()
     zoo = alpha_zoo.Alpha_Zoo.load()
     print(f"Zoo loaded with {zoo.n} members")
     zoo.model = model
@@ -32,6 +33,8 @@ with llm.Model() as model:
         if n_new > 0:
             zoo.save()
     print("Sufficient zoo members")
-    zoo.save()
+    zoo.save() """
 
 #portfolio
+zoo = alpha_zoo.Alpha_Zoo.load()
+print(f"Zoo loaded with {zoo.n} members")

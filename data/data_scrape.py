@@ -191,6 +191,32 @@ def get_date_range_lookback(begin, end, lookback=90, forward=20):
         )
     return period_data_list
 
+def initialize_prediction_data(instance, universe, forward, lookback):
+    """Populate the shared universe, target, and history data used by predictors."""
+    instance.universe_n = len(universe)
+    instance.day_length = len(universe[0]["close"])
+    instance.targets_n = instance.day_length - forward - lookback
+    instance.lookback_n = instance.day_length - forward
+    instance.targets = np.zeros((instance.universe_n, instance.targets_n))
+    instance.targets[0] = (
+        universe[0]["close"][:instance.targets_n]
+        / universe[0]["close"][forward:forward + instance.targets_n]
+        - 1
+    )
+    for i, history in enumerate(universe[1:], start=1):
+        assert len(history["close"]) == instance.day_length
+        instance.targets[i] = (
+            history["close"][:instance.targets_n]
+            / history["close"][forward:forward + instance.targets_n]
+            - 1
+        )
+
+    instance.histories = [
+        {key: values[forward:] for key, values in history.items()}
+        for history in universe
+    ]
+    print(f"{instance.targets_n} days loaded against {instance.universe_n} tickers!")
+
 AVAILABLE_FIELDS = ["close","open","high","low","volume"]
 AVAILABLE_FIELDS_STRING = """close - The stock price at the end of the trading day
 open - The stock price at the beginning of the trading day
