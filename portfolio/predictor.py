@@ -53,10 +53,30 @@ class Predictor:
         return joblib.load(PREDICTOR_FILE_PATH)
 
     def predict(self,histories):
-        prediction_matrix = []
-        for i, formula in enumerate(self.formulas):
-            if self.SFS.support_[i]:
-                prediction_matrix.append(formula.apply(histories)[:,:])
-            else:
-                prediction_matrix.append()
+        selected = self.SFS.get_support()
+        selected_predictions = []
+        for formula in (f for f, keep in zip(self.formulas, selected) if keep):
+            selected_predictions.append(formula.apply(histories))
+
+        if not selected_predictions:
+            raise ValueError("The trained predictor has no selected formulas")
+
+        output_shape = tuple(
+            min(prediction.shape[axis] for prediction in selected_predictions)
+            for axis in range(selected_predictions[0].ndim)
+        )
+        slices = tuple(slice(0, size) for size in output_shape)
+        selected_features = [
+            prediction[slices].reshape(-1)
+            for prediction in selected_predictions
+        ]
+
+        # Training scaled all formula columns before selecting a subset. Apply the
+        # matching saved scaler parameters to the selected columns at inference.
+        prediction_matrix = np.column_stack(selected_features)
+        selected_scaled = (
+            prediction_matrix - self.scaler.mean_[selected]
+        ) / self.scaler.scale_[selected]
+        predictions = self.regressor.predict(selected_scaled)
+        return predictions.reshape(output_shape)
                 
