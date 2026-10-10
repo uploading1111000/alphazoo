@@ -1,6 +1,7 @@
 import data
 import alpha_zoo
 import llm
+import portfolio
 import pandas as pd
 
 #zoo builder
@@ -36,5 +37,9 @@ with llm.Model() as model:
     zoo.save() """
 
 #portfolio
-zoo = alpha_zoo.Alpha_Zoo.load()
+"""zoo = alpha_zoo.Alpha_Zoo.load()
 print(f"Zoo loaded with {zoo.n} members")
+predictor = portfolio.Predictor(zoo)
+predictor.train(20,90,pd.to_datetime("2025-01-01"),pd.to_datetime("2025-07-01"))"""
+predictor = portfolio.Predictor.load()
+print(predictor.SFS.support_)
