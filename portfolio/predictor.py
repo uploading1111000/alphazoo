@@ -4,6 +4,7 @@ from sklearn.linear_model import RidgeCV
 from sklearn.preprocessing import StandardScaler
 from data import initialize_prediction_data, get_date_range_lookback
 import joblib
+import pandas as pd
 PREDICTOR_FILE_PATH = "portfolio/predictor.pkl"
 
 class Predictor:
@@ -54,18 +55,13 @@ class Predictor:
 
     def predict(self,histories):
         selected = self.SFS.get_support()
-        selected_predictions = []
-        for formula in (f for f, keep in zip(self.formulas, selected) if keep):
-            selected_predictions.append(formula.apply(histories))
+        selected_predictions = [formula.apply(histories) for formula in (f for f, keep in zip(self.formulas, selected) if keep)]
 
-        if not selected_predictions:
-            raise ValueError("The trained predictor has no selected formulas")
-
-        output_shape = tuple(
-            min(prediction.shape[axis] for prediction in selected_predictions)
-            for axis in range(selected_predictions[0].ndim)
+        output_shape = (
+            selected_predictions[0].shape[0],
+            min(prediction.shape[1] for prediction in selected_predictions),
         )
-        slices = tuple(slice(0, size) for size in output_shape)
+        slices = (slice(None), slice(0, output_shape[1]))
         selected_features = [
             prediction[slices].reshape(-1)
             for prediction in selected_predictions
@@ -79,4 +75,16 @@ class Predictor:
         ) / self.scaler.scale_[selected]
         predictions = self.regressor.predict(selected_scaled)
         return predictions.reshape(output_shape)
-                
+
+    def test_correlate(self):
+        universe = get_date_range_lookback(
+            pd.to_datetime("2025-07-01"),
+            pd.to_datetime("2026-07-01"),
+            90,
+            20)
+        initialize_prediction_data(self, universe, 20, 90)
+        predictions = self.predict(self.histories)[:,:self.targets_n]
+        R_i = np.zeros((self.targets_n))
+        for day in range(self.targets_n):
+            R_i = np.corrcoef(self.targets[:,day],predictions[:,day])[0,1]
+        print(np.mean(R_i))
