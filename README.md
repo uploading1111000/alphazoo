@@ -15,7 +15,10 @@ In future, would redesign backtester and data gathering to account for this bias
 Selecting top 50/100/200 alphas from zoo by RankICIR:\
 - Ridge regression achieved RankIC of -0.0009/-0.0022/0.0043, AER 12.04%/12.89%/14.73%
 - Simple mean of top alphas achieved RankIC of 0.0072/0.0063/0.0049, AER 17.83%/12.68%/17.44%
-- AER of FTSE250 over test period: 8.51%\
+- AER of FTSE250 over test period: 8.51%
+
+<!-- end of the list -->
+
 In this implementation, out-of-sample correlation performance falls far short of the values suggested by the original paper, while portfolio performance stays similar, indicating that the zoo tends to have some predictive power when it comes to strongly performing stocks but there is no evidence it cant predict stock movements across the rest of the FTSE250 universe. 
 
 ## Design
@@ -25,6 +28,9 @@ Backtest of each alpha along 5 dimensions mentioned in original paper:
 3. Turnover - Percentage change in simple top 10% allocation based on formula
 4. Diversity - Maximum correlation with alpha already in zoo
 5. Overfitting Risk - Determined by LLM judgement\
+
+<!-- end of the list -->
+
 Backtest, MCTS search and final portfolio generation all written from scratch (no QLib as used in original paper). \
 Predictive formula trained with sklearn Ridge over entire *train* period. \ 
 Portfolio built by attempting to hold top 24 predicted stocks, changing at most 6 a day to reduce turnover. \
