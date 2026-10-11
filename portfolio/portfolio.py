@@ -13,17 +13,22 @@ class Portfolio:
 
     def backtest(self,begin,end,lookback):
         universe = get_date_range_lookback(begin,end,lookback,self.forward)
+        universe_n = len(universe)
         print("Data loaded")
         predictions = self.predictor.predict(universe)[:,::-1]
         print("Predictions complete")
         pred_length = predictions.shape[1]
         prices = np.array([history["close"] for history in universe])[:,:pred_length][:,::-1]
+        held_stocks = np.array([1/(prices[i,0]*universe_n) for i in range(universe_n)])
 
         self.first_day(predictions[:,0],prices[:,0])
         for i in range(self.skip,pred_length,self.skip):
             self.single_day(predictions[:,i],prices[:,i])
 
         print(self.holdings_value(prices[:,pred_length-1]))
+        value = sum(held_stocks * prices[:,pred_length-1])
+        print(value)
+
 
 
 

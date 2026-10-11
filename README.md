@@ -7,25 +7,25 @@ Any work done using coding agents (chatgpt) will be noted as such in the commit 
 Trained from 2020-01-01 to 2024-12-31, validated 2025-01-01 to 2026-07-01.\
 Did not use Frequent Subtree Avoidance (FSA) from original paper, relied on diversity metric.\
 Built 201 zoo members using Z-AI's GLM5.3 Flash as the underlying LLM. \
-**NB**: Some bias in the data coming from decision to train and validate on stocks that were
+**NB**: Strong bias in the data coming from decision to train and validate on stocks that were
 1. Listed on the LSE over the entire train/test period 
 2. Present in the FTSE250 on 2026-09-21
 3. Had a full trading history over the train/test period on every LSE trading day.
 
 <!-- end of the list -->
 
-In future, would redesign backtester and data gathering to account for this bias.\
-0.15% transaction costs assigned to each trade for portfolio testing.
+In future, one would redesign backtester and data gathering to account for this bias.\
+0.15% transaction costs assigned to each trade for portfolio backtesting.
 
 ## Results
 Selecting top 50/100/200 alphas from zoo by RankICIR:
 - Ridge regression achieved RankIC of -0.0009/-0.0022/0.0043, AER 12.04%/12.89%/14.73%
 - Simple mean of top alphas achieved RankIC of 0.0072/0.0063/0.0049, AER 17.83%/12.68%/17.44%
-- AER of FTSE250 over test period: 8.51%
+- Biased (see Implementation Details) AER of FTSE250 over test period: 15.27%
 
 <!-- end of the list -->
 
-In this implementation, out-of-sample correlation performance falls far short of the values suggested by the original paper, while portfolio performance stays similar, indicating that the zoo tends to have some predictive power when it comes to strongly performing stocks but there is no evidence it can predict stock movements in general. 
+In this implementation, out-of-sample correlation performance falls far short of the values suggested by the original paper, while portfolio performance looks similarly unstable, indicating there is no evidence it can predict stock movements in general. 
 
 ## Design
 Backtest of each alpha along 5 dimensions mentioned in original paper:
