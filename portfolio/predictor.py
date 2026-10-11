@@ -21,7 +21,7 @@ class Predictor:
         )[:n_alphas]
         print(f"Selected {len(self.selected_formulas)} features by RankIR")
 
-        universe = get_date_range_lookback(begin,end,lookback,forward)
+        """universe = get_date_range_lookback(begin,end,lookback,forward)
         initialize_prediction_data(self, universe, forward, lookback)
         targets = self.rank_normalize(self.targets).flatten()
         prediction_matrix = []
@@ -32,7 +32,7 @@ class Predictor:
         del self.histories #cleanup for save
         del self.targets
         del universe
-        print("Train set built")
+        print("Train set built")"""
 
         """self.regressor = HistGradientBoostingRegressor(
             max_iter=100,
@@ -42,9 +42,9 @@ class Predictor:
             early_stopping=False,
             max_features=0.5,
         )"""
-        self.regressor = Lasso(alpha=5,positive=True)
+        #self.regressor = Ridge(alpha=5,positive=True)
 
-        self.regressor.fit(prediction_matrix,targets)
+        #self.regressor.fit(prediction_matrix,targets)
 
         joblib.dump(self,PREDICTOR_FILE_PATH)
         print("Regressor fit.")
@@ -80,7 +80,8 @@ class Predictor:
         ]
 
         prediction_matrix = np.column_stack(selected_features)
-        predictions = self.regressor.predict(prediction_matrix)
+        #predictions = self.regressor.predict(prediction_matrix)
+        predictions = np.mean(prediction_matrix,axis=1)
         return predictions.reshape(output_shape)
 
     def test_correlate(self):
@@ -93,5 +94,5 @@ class Predictor:
         predictions = self.predict(self.histories)[:,:self.targets_n]
         R_i = np.zeros((self.targets_n))
         for day in range(self.targets_n):
-            R_i[day] = np.corrcoef(self.targets[:,day],predictions[:,day])[0,1]
+            R_i[day] = np.corrcoef(self.rank_normalize(self.targets[:,day]),self.rank_normalize(predictions[:,day]))[0,1]
         print(np.mean(R_i))

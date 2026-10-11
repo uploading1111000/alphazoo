@@ -50,7 +50,7 @@ class Portfolio:
             sell_value += prices[i] * self.holdings[i]
             self.holdings[i] = 0
         
-        sell_value = sell_value * 0.997
+        sell_value = sell_value * 0.997 #0.15% on buy + 0.15% on sell < 0.3% overall cost
 
         for i, _ in purchaseables:
             self.holdings[i] = sell_value / (turnover * prices[i])
