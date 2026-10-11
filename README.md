@@ -19,7 +19,7 @@ Selecting top 50/100/200 alphas from zoo by RankICIR:\
 
 <!-- end of the list -->
 
-In this implementation, out-of-sample correlation performance falls far short of the values suggested by the original paper, while portfolio performance stays similar, indicating that the zoo tends to have some predictive power when it comes to strongly performing stocks but there is no evidence it cant predict stock movements across the rest of the FTSE250 universe. 
+In this implementation, out-of-sample correlation performance falls far short of the values suggested by the original paper, while portfolio performance stays similar, indicating that the zoo tends to have some predictive power when it comes to strongly performing stocks but there is no evidence it can predict stock movements in general. 
 
 ## Design
 Backtest of each alpha along 5 dimensions mentioned in original paper:
