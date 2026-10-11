@@ -1,8 +1,7 @@
 import numpy as np
-from sklearn.feature_selection import SequentialFeatureSelector
-from sklearn.linear_model import Ridge
-from sklearn.preprocessing import StandardScaler
+from scipy.stats import rankdata
 from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.linear_model import Ridge, Lasso
 from data import initialize_prediction_data, get_date_range_lookback
 import joblib
 import pandas as pd
@@ -12,52 +11,63 @@ class Predictor:
     def __init__(self,zoo):
         self.formulas = zoo.formulas
 
-    def train(self,forward,lookback,begin,end,k=None,n_alphas=50,cv=None):
+    def train(self,forward,lookback,begin,end,n_alphas=50):
+        """Select the top n_alphas formulas by descending RankIR."""
+        eligible = [formula for formula in self.formulas if np.isfinite(formula.scores[1])]
+        if not eligible:
+            raise ValueError("No formulas have a finite RankIR score")
+        self.selected_formulas = sorted(
+            eligible, key=lambda formula: formula.scores[1], reverse=True
+        )[:n_alphas]
+        print(f"Selected {len(self.selected_formulas)} features by RankIR")
+
         universe = get_date_range_lookback(begin,end,lookback,forward)
         initialize_prediction_data(self, universe, forward, lookback)
-        targets = self.targets.flatten()
+        targets = self.rank_normalize(self.targets).flatten()
         prediction_matrix = []
-        for formula in self.formulas:
+        for formula in self.selected_formulas:
             predictions = formula.apply(self.histories)[:,:self.targets_n]
-            prediction_matrix.append(predictions.flatten())
+            prediction_matrix.append(self.rank_normalize(predictions).flatten())
         prediction_matrix = np.array(prediction_matrix).T
         del self.histories #cleanup for save
         del self.targets
         del universe
         print("Train set built")
 
-        self.scaler = StandardScaler()
-        scaled_predictions = self.scaler.fit_transform(prediction_matrix)
-        del prediction_matrix
-        print("Features scaled")
+        """self.regressor = HistGradientBoostingRegressor(
+            max_iter=100,
+            learning_rate=0.05,
+            l2_regularization=0.1,
+            max_leaf_nodes=32,
+            early_stopping=False,
+            max_features=0.5,
+        )"""
+        self.regressor = Lasso(alpha=5,positive=True)
 
-        with joblib.parallel_config(
-            backend="loky",
-            max_nbytes=None,
-            n_jobs=5
-        ):
-            self.SFS = SequentialFeatureSelector(
-                Ridge(10),
-                n_features_to_select=n_alphas,
-                cv=cv
-            )
-            selected_train = self.SFS.fit_transform(scaled_predictions, targets)
-        del scaled_predictions
-        print("Features selected")
-
-        self.regressor = HistGradientBoostingRegressor()
-
-        self.regressor.fit(selected_train,targets)
+        self.regressor.fit(prediction_matrix,targets)
 
         joblib.dump(self,PREDICTOR_FILE_PATH)
-        print(f"Regressor fit. Score: {self.regressor.validation_score_[-1]}")
+        print("Regressor fit.")
 
+    @staticmethod
     def load():
         return joblib.load(PREDICTOR_FILE_PATH)
 
+    @staticmethod
+    def rank_normalize(values):
+        """Center per-date percentile ranks across tickers: (rank - 0.5) / n - 0.5.
+
+        Ties receive average ranks; nonfinite values remain missing (NaN).
+        A constant cross-section or a single valid ticker maps to zero.
+        """
+        values = np.asarray(values, dtype=float)
+        finite = np.isfinite(values)
+        ranks = rankdata(np.where(finite, values, np.nan), axis=0, method="average", nan_policy="omit")
+        counts = finite.sum(axis=0, keepdims=True)
+        return (ranks - 0.5) / np.maximum(counts, 1) - 0.5
+
     def predict(self,histories):
-        selected = self.SFS.get_support()
-        selected_predictions = [formula.apply(histories) for formula in (f for f, keep in zip(self.formulas, selected) if keep)]
+        selected_predictions = [formula.apply(histories) for formula in self.selected_formulas]
 
         output_shape = (
             selected_predictions[0].shape[0],
@@ -65,22 +75,17 @@ class Predictor:
         )
         slices = (slice(None), slice(0, output_shape[1]))
         selected_features = [
-            prediction[slices].reshape(-1)
+            self.rank_normalize(prediction[slices]).reshape(-1)
             for prediction in selected_predictions
         ]
 
-        # Training scaled all formula columns before selecting a subset. Apply the
-        # matching saved scaler parameters to the selected columns at inference.
         prediction_matrix = np.column_stack(selected_features)
-        selected_scaled = (
-            prediction_matrix - self.scaler.mean_[selected]
-        ) / self.scaler.scale_[selected]
-        predictions = self.regressor.predict(selected_scaled)
+        predictions = self.regressor.predict(prediction_matrix)
         return predictions.reshape(output_shape)
 
     def test_correlate(self):
         universe = get_date_range_lookback(
-            pd.to_datetime("2025-07-01"),
+            pd.to_datetime("2025-01-01"),
             pd.to_datetime("2026-07-01"),
             90,
             20)

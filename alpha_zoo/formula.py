@@ -1,8 +1,18 @@
 import copy
+from joblib import Parallel, delayed, parallel_config
 from .operators import OPERATORS
 from data import AVAILABLE_FIELDS
 import json
 import numpy as np
+
+
+def _apply_history(history, instructions):
+    variables = copy.copy(history)
+    for operator, var_names, p_values, output in instructions:
+        v_values = [variables[v_name] for v_name in var_names]
+        variables[output] = operator(v_values, p_values)
+    return variables["alpha"]
+
 
 def validate_code(code,arguments,window=90): #not sure how to handle the window so far, seems silly to keep window around as a member of every class
     #this will probably have to update as we see whatever nonsensical things the LLM comes up with
@@ -95,23 +105,24 @@ class Formula():
         z_member.predictions = None
         return z_member
 
-    def apply(self, histories):
+    def apply(self, histories, max_workers=16):
+        """Evaluate tickers in separate processes; max_workers=1 runs serially."""
         #apply to each history in histories
         #return np array of shape (universe_n,>targets_n)
         parameters = self.arg_list[self.arg_i]
-        predictions = []
-        for history in histories:
-            variables = copy.copy(history)
-            for line in self.code:
-                name = line["name"]
-                param_names = line["param"]
-                var_names = line["input"]
-                output = line["output"]
-                operator = OPERATORS[name]
-                v_values = [variables[v_name] for v_name in var_names]
-                p_values = [parameters[p_name] for p_name in param_names]
-                variables[output] = operator(v_values,p_values)
-            predictions.append(variables["alpha"])
+        instructions = [
+            (OPERATORS[line["name"]], line["input"],
+             [parameters[name] for name in line["param"]], line["output"])
+            for line in self.code
+        ]
+
+        # Python-heavy operators need processes to bypass the GIL. Loky reuses
+        # its workers across formulas and returns results in ticker order.
+        # Limit native-library threads to avoid oversubscribing the CPU.
+        with parallel_config(backend="loky", inner_max_num_threads=1):
+            predictions = Parallel(n_jobs=max_workers)(
+                delayed(_apply_history)(history, instructions) for history in histories
+            )
         return np.array(predictions)
 
     def apply_args(self,i):
