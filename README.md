@@ -18,7 +18,7 @@ In future, would redesign backtester and data gathering to account for this bias
 0.15% transaction costs assigned to each trade for portfolio testing.
 
 ## Results
-Selecting top 50/100/200 alphas from zoo by RankICIR:\
+Selecting top 50/100/200 alphas from zoo by RankICIR:
 - Ridge regression achieved RankIC of -0.0009/-0.0022/0.0043, AER 12.04%/12.89%/14.73%
 - Simple mean of top alphas achieved RankIC of 0.0072/0.0063/0.0049, AER 17.83%/12.68%/17.44%
 - AER of FTSE250 over test period: 8.51%
