@@ -8,13 +8,13 @@ Trained from 2020-01-01 to 2024-12-31, validated 2025-01-01 to 2026-07-01.\
 Did not use Frequent Subtree Avoidance (FSA) from original paper, relied on diversity metric.\
 Built 201 zoo members using Z-AI's GLM5.3 Flash as the underlying LLM (However, first 10 alphas were not improved or filtered, while next 10 were built by Gemini3.5 Flash Lite).\
 **NB**: Strong bias in the data coming from decision to train and validate on stocks that were
-1. listed on the LSE over the entire train/test period 
+1. Listed on the LSE over the entire train/test period 
 2. Present in the FTSE250 on 2026-09-21
 3. Had a full trading history over the train/test period on every LSE trading day.
 
 <!-- end of the list -->
 
-In future, would redesign backtester and data gathering to account for this bias.
+In future, would redesign backtester and data gathering to account for this bias.\
 0.15% transaction costs assigned to each trade for portfolio testing.
 
 ## Results
