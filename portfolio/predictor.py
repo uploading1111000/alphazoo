@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.stats import rankdata
-from sklearn.ensemble import HistGradientBoostingRegressor
-from sklearn.linear_model import Ridge, Lasso
+from lightgbm import LGBMRegressor
 from data import initialize_prediction_data, get_date_range_lookback
 import joblib
 import pandas as pd
@@ -12,7 +11,13 @@ class Predictor:
         self.formulas = zoo.formulas
 
     def train(self,forward,lookback,begin,end,n_alphas=50):
-        """Select the top n_alphas formulas by descending RankIR."""
+        """Fit on all dates in [begin, end), using the top n_alphas by RankIR.
+
+        Use begin=2020-01-01 and end=2025-01-01 for the 2020–2024
+        training period. No validation split or early stopping is used.
+        """
+        if isinstance(n_alphas, bool) or not isinstance(n_alphas, (int, np.integer)) or n_alphas <= 0:
+            raise ValueError("n_alphas must be a positive integer")
         eligible = [formula for formula in self.formulas if np.isfinite(formula.scores[1])]
         if not eligible:
             raise ValueError("No formulas have a finite RankIR score")
@@ -21,7 +26,7 @@ class Predictor:
         )[:n_alphas]
         print(f"Selected {len(self.selected_formulas)} features by RankIR")
 
-        """universe = get_date_range_lookback(begin,end,lookback,forward)
+        universe = get_date_range_lookback(begin,end,lookback,forward)
         initialize_prediction_data(self, universe, forward, lookback)
         targets = self.rank_normalize(self.targets).flatten()
         prediction_matrix = []
@@ -32,19 +37,19 @@ class Predictor:
         del self.histories #cleanup for save
         del self.targets
         del universe
-        print("Train set built")"""
+        print("Train set built")
 
-        """self.regressor = HistGradientBoostingRegressor(
-            max_iter=100,
+        self.regressor = LGBMRegressor(
+            num_leaves=32,
+            n_estimators=200,
+            max_depth=8,
             learning_rate=0.05,
-            l2_regularization=0.1,
-            max_leaf_nodes=32,
-            early_stopping=False,
-            max_features=0.5,
-        )"""
-        #self.regressor = Ridge(alpha=5,positive=True)
+            reg_alpha=0.1,
+            reg_lambda=0.1,
+        )
 
-        #self.regressor.fit(prediction_matrix,targets)
+        # Fixed boosting budget on the full training set; no eval_set or callbacks.
+        self.regressor.fit(prediction_matrix,targets)
 
         joblib.dump(self,PREDICTOR_FILE_PATH)
         print("Regressor fit.")
@@ -67,6 +72,8 @@ class Predictor:
         return (ranks - 0.5) / np.maximum(counts, 1) - 0.5
 
     def predict(self,histories):
+        if not getattr(self, "selected_formulas", None) or not hasattr(self, "regressor"):
+            raise ValueError("Retrain the predictor before predicting")
         selected_predictions = [formula.apply(histories) for formula in self.selected_formulas]
 
         output_shape = (
@@ -80,8 +87,7 @@ class Predictor:
         ]
 
         prediction_matrix = np.column_stack(selected_features)
-        #predictions = self.regressor.predict(prediction_matrix)
-        predictions = np.mean(prediction_matrix,axis=1)
+        predictions = self.regressor.predict(prediction_matrix)
         return predictions.reshape(output_shape)
 
     def test_correlate(self):

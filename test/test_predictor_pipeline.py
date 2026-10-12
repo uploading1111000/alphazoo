@@ -9,7 +9,7 @@ from unittest.mock import patch
 import joblib
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
-from sklearn.ensemble import HistGradientBoostingRegressor
+from lightgbm import LGBMRegressor
 
 from alpha_zoo.formula import Formula
 from portfolio.predictor import Predictor
@@ -103,19 +103,33 @@ class PredictorPipelineTests(unittest.TestCase):
         ])
         expected_targets = np.array([
             history["close"][:3] / history["close"][1:4] - 1 for history in universe
-        ]).flatten()
-        regressor = HistGradientBoostingRegressor(max_iter=3, min_samples_leaf=1, early_stopping=False)
+        ])
+        expected_targets = Predictor.rank_normalize(expected_targets).flatten()
+        # Small leaves allow this tiny fixture to exercise actual tree splits.
+        regressor = LGBMRegressor(
+            num_leaves=32, n_estimators=200, max_depth=8, learning_rate=0.05,
+            reg_alpha=0.1, reg_lambda=0.1, min_child_samples=1, n_jobs=1, verbosity=-1,
+        )
         with tempfile.TemporaryDirectory() as directory:
             model_path = str(Path(directory) / "predictor.pkl")
-            with patch("portfolio.predictor.get_date_range_lookback", return_value=universe), \
-                 patch("portfolio.predictor.HistGradientBoostingRegressor", return_value=regressor), \
+            with patch("portfolio.predictor.get_date_range_lookback", return_value=universe) as load_data, \
+                 patch("portfolio.predictor.LGBMRegressor", return_value=regressor) as model, \
                  patch("portfolio.predictor.PREDICTOR_FILE_PATH", model_path), \
                  patch.object(formulas[0], "apply", side_effect=AssertionError("Unselected alpha evaluated")), \
                  patch.object(regressor, "fit", wraps=regressor.fit) as fit, \
                  patch("portfolio.predictor.joblib.dump"):
-                predictor.train(1, 2, None, None, n_alphas=2)
+                predictor.train(1, 2, "2020-01-01", "2025-01-01", n_alphas=2)
+                load_data.assert_called_once_with("2020-01-01", "2025-01-01", 2, 1)
+                model.assert_called_once_with(
+                    num_leaves=32, n_estimators=200, max_depth=8,
+                    learning_rate=0.05, reg_alpha=0.1, reg_lambda=0.1,
+                )
+                self.assertEqual(fit.call_count, 1)
+                self.assertEqual(fit.call_args.kwargs, {})
+                self.assertEqual(len(fit.call_args.args), 2)
                 assert_allclose(fit.call_args.args[0], expected_features)
                 assert_allclose(fit.call_args.args[1], expected_targets)
+                self.assertEqual(regressor.n_estimators_, 200)
             self.assertEqual(predictor.selected_formulas, formulas[1:3])
             with patch.object(regressor, "predict", wraps=regressor.predict) as predict:
                 result = predictor.predict(histories)

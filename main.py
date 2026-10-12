@@ -37,12 +37,12 @@ with llm.Model() as model:
     zoo.save() """
 
 #portfolio
-"""zoo = alpha_zoo.Alpha_Zoo.load()
+zoo = alpha_zoo.Alpha_Zoo.load()
 print(f"Zoo loaded with {zoo.n} members")
 predictor = portfolio.Predictor(zoo)
-predictor.train(20,90,pd.to_datetime("2020-01-01"),pd.to_datetime("2025-01-01"),n_alphas=200)"""
-predictor = portfolio.Predictor.load()
-#predictor.test_correlate()
+predictor.train(20,90,pd.to_datetime("2020-01-01"),pd.to_datetime("2025-01-01"),n_alphas=200)
+#predictor = portfolio.Predictor.load()
+predictor.test_correlate()
 pfolio = portfolio.Portfolio(predictor,24,20,skip=5)
 pfolio.backtest(
     pd.to_datetime("2025-01-01"),

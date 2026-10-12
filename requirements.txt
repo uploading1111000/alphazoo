@@ -6,3 +6,5 @@ openrouter
 python-dotenv
 scipy
 joblib
+lightgbm
+scikit-learn
