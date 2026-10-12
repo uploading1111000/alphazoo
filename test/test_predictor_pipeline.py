@@ -9,7 +9,9 @@ from unittest.mock import patch
 import joblib
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
-from sklearn.ensemble import HistGradientBoostingRegressor
+import torch
+from torch import nn
+import pandas as pd
 
 from alpha_zoo.formula import Formula
 from portfolio.predictor import Predictor
@@ -101,30 +103,91 @@ class PredictorPipelineTests(unittest.TestCase):
             Predictor.rank_normalize(formula.apply(histories)[:, :3]).flatten()
             for formula in formulas[1:3]
         ])
-        expected_targets = np.array([
+        expected_targets = Predictor.rank_normalize(np.array([
             history["close"][:3] / history["close"][1:4] - 1 for history in universe
-        ]).flatten()
-        regressor = HistGradientBoostingRegressor(max_iter=3, min_samples_leaf=1, early_stopping=False)
+        ])).flatten()
         with tempfile.TemporaryDirectory() as directory:
             model_path = str(Path(directory) / "predictor.pkl")
-            with patch("portfolio.predictor.get_date_range_lookback", return_value=universe), \
-                 patch("portfolio.predictor.HistGradientBoostingRegressor", return_value=regressor), \
+            with patch("portfolio.predictor.get_date_range_lookback", return_value=universe) as load_data, \
                  patch("portfolio.predictor.PREDICTOR_FILE_PATH", model_path), \
                  patch.object(formulas[0], "apply", side_effect=AssertionError("Unselected alpha evaluated")), \
-                 patch.object(regressor, "fit", wraps=regressor.fit) as fit, \
+                 patch.object(predictor, "_fit", wraps=predictor._fit) as fit, \
                  patch("portfolio.predictor.joblib.dump"):
-                predictor.train(1, 2, None, None, n_alphas=2)
+                predictor.train(1, 2, n_alphas=2, max_epochs=2)
                 assert_allclose(fit.call_args.args[0], expected_features)
                 assert_allclose(fit.call_args.args[1], expected_targets)
+                assert_allclose(fit.call_args.args[2], expected_features)
+                assert_allclose(fit.call_args.args[3], expected_targets)
+                self.assertEqual(load_data.call_args_list[0].args,
+                                 (pd.Timestamp("2020-01-01"), pd.Timestamp("2024-01-01"), 2, 1))
+                self.assertEqual(load_data.call_args_list[1].args,
+                                 (pd.Timestamp("2024-01-01"), pd.Timestamp("2025-01-01"), 2, 1))
             self.assertEqual(predictor.selected_formulas, formulas[1:3])
-            with patch.object(regressor, "predict", wraps=regressor.predict) as predict:
-                result = predictor.predict(histories)
-                self.assertEqual(result.shape, (3, 4))
-                used_features = predict.call_args.args[0].reshape(3, 4, 2)
-                assert_allclose(used_features[:, :3, :].reshape(-1, 2), expected_features)
+            result = predictor.predict(histories)
+            self.assertEqual(result.shape, (3, 4))
+            self.assertTrue(np.isfinite(result).all())
+            assert_array_equal(result, predictor.predict(histories))
+            used_features, _ = predictor._features(histories)
+            assert_allclose(used_features.reshape(3, 4, 2)[:, :3, :].reshape(-1, 2), expected_features)
+            with torch.no_grad():
+                expected = predictor.regressor(torch.from_numpy(used_features)).numpy().reshape(3, 4)
+            assert_allclose(result, expected)
+            layers = [layer for layer in predictor.regressor if isinstance(layer, nn.Linear)]
+            self.assertEqual([(layer.in_features, layer.out_features) for layer in layers],
+                             [(2, 256), (256, 128), (128, 64), (64, 1)])
+            self.assertEqual([layer.p for layer in predictor.regressor if isinstance(layer, nn.Dropout)],
+                             [0.3, 0.3, 0.3])
             joblib.dump(predictor, model_path)
-            restored = joblib.load(model_path)
+            with patch("portfolio.predictor.PREDICTOR_FILE_PATH", model_path):
+                restored = Predictor.load()
             assert_allclose(restored.predict(histories), result)
+            self.assertFalse(hasattr(restored, "histories"))
+            self.assertFalse(hasattr(restored, "targets"))
+
+    def test_early_stopping_restores_best_weights_after_five_stale_epochs(self):
+        predictor = Predictor(SimpleNamespace(formulas=[]))
+        x = np.array([[-0.3], [0.1], [0.4]], dtype=np.float32)
+        y = x[:, 0].copy()
+        checkpoints = []
+        losses = iter([3., 2., 2., 2.1, 2.2, 2.3, 2.4])
+
+        def validation_loss(loader):
+            checkpoints.append({key: value.clone() for key, value in predictor.regressor.state_dict().items()})
+            return next(losses)
+
+        with patch.object(predictor, "_validation_loss", side_effect=validation_loss):
+            predictor._fit(x, y, x, y, max_epochs=20)
+        self.assertEqual(predictor.n_epochs_, 7)
+        self.assertEqual(predictor.best_epoch_, 2)
+        self.assertEqual(predictor.best_validation_loss_, 2.)
+        for key, value in predictor.regressor.state_dict().items():
+            torch.testing.assert_close(value, checkpoints[1][key], rtol=0, atol=0)
+        self.assertFalse(predictor.regressor.training)
+
+    def test_missing_features_are_neutral_and_missing_targets_excluded(self):
+        predictor = Predictor(SimpleNamespace(formulas=[]))
+        predictor.selected_formulas = [SimpleNamespace(apply=lambda histories: np.array(
+            [[np.nan, 1.], [2., np.inf]]))]
+
+        def initialize(data, universe, forward, lookback):
+            data.histories = []
+            data.targets_n = 2
+            data.targets = np.array([[np.nan, 3.], [2., 4.]])
+
+        with patch("portfolio.predictor.get_date_range_lookback", return_value=[]), \
+             patch("portfolio.predictor.initialize_prediction_data", side_effect=initialize):
+            features, targets = predictor._build_dataset(1, 2, "2020-01-01", "2024-01-01")
+        assert_array_equal(features, np.zeros((3, 1)))
+        assert_allclose(targets, [-0.25, 0., 0.25])
+
+    def test_invalid_dates_fail_before_loading_data(self):
+        predictor = Predictor(SimpleNamespace(formulas=[make_formula(1)]))
+        with patch("portfolio.predictor.get_date_range_lookback") as load_data:
+            for begin, split, end in (("2024-01-01", "2024-01-01", "2025-01-01"),
+                                      ("2020-01-01", "2025-01-01", "2025-01-01")):
+                with self.assertRaisesRegex(ValueError, "begin < validation_begin < end"):
+                    predictor.train(1, 2, begin, end, validation_begin=split)
+            load_data.assert_not_called()
 
     def test_selection_defaults_to_n_alphas_and_caps_to_available(self):
         formulas = [make_formula(0.2), make_formula(0.8)]
@@ -133,7 +196,7 @@ class PredictorPipelineTests(unittest.TestCase):
         with patch("portfolio.predictor.get_date_range_lookback", side_effect=RuntimeError("stop")):
             for count, expected in ((1, [formulas[1]]), (50, formulas[::-1])):
                 with self.assertRaisesRegex(RuntimeError, "stop"):
-                    predictor.train(1, 2, None, None, n_alphas=count)
+                    predictor.train(1, 2, n_alphas=count)
                 self.assertEqual(predictor.selected_formulas, expected)
 
     def test_invalid_selection_fails_before_loading_data(self):

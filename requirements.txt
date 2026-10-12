@@ -6,3 +6,4 @@ openrouter
 python-dotenv
 scipy
 joblib
+torch
